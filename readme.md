@@ -32,11 +32,4 @@ A Symfony-based web application for gym members to track their workout programs 
 
 - **Backend**: Symfony 6, Doctrine ORM
 - **Database**: MySQL
-- **Frontend**: Twig templates, Bootstrap (optional)
-
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone git@gitlab.com:yourusername/sportApp.git
-   ```
+- **Frontend**: Twig templates, Tailwindcss
