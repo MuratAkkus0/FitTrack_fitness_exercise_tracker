@@ -1,0 +1,106 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block dashboard_content %}
+	<div id="todayWorkout" class="bg-white rounded-xl shadow-md p-6">
+		<div class="flex justify-between items-center mb-6">
+			<h3 class="text-xl font-bold text-indigo-900">Today's Workout: Upper Body</h3>
+			<div class="flex space-x-3">
+				<button class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+					<i class="fas fa-calendar-day mr-1"></i>
+					July 18, 2023
+				</button>
+				<button class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
+					<i class="fas fa-clock mr-1"></i>
+					45 min
+				</button>
+			</div>
+		</div>
+
+		<!-- Workout Exercises -->
+		<div
+			class="space-y-4">
+			<!-- Exercise 1 -->
+			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+				<div class="flex justify-between items-center mb-2">
+					<h4 class="font-semibold">Bench Press</h4>
+					<div class="flex space-x-2">
+						<button class="text-gray-500 hover:text-orange-500">
+							<i class="fas fa-edit"></i>
+						</button>
+						<button class="text-gray-500 hover:text-red-500">
+							<i class="fas fa-trash"></i>
+						</button>
+					</div>
+				</div>
+				<div class="grid grid-cols-3 gap-4 mb-3">
+					<div>
+						<label class="text-sm text-gray-500">Weight (kg)</label>
+						<input type="number" value="70" class="w-full border border-gray-300 rounded p-2">
+					</div>
+					<div>
+						<label class="text-sm text-gray-500">Sets</label>
+						<input type="number" value="4" class="w-full border border-gray-300 rounded p-2">
+					</div>
+					<div>
+						<label class="text-sm text-gray-500">Reps</label>
+						<input type="number" value="8" class="w-full border border-gray-300 rounded p-2">
+					</div>
+				</div>
+				<div>
+					<label class="text-sm text-gray-500">Notes</label>
+					<textarea class="w-full border border-gray-300 rounded p-2" rows="2">Felt strong today, could increase weight next time</textarea>
+				</div>
+			</div>
+
+			<!-- Exercise 2 -->
+			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+				<div class="flex justify-between items-center mb-2">
+					<h4 class="font-semibold">Incline Dumbbell Press</h4>
+					<div class="flex space-x-2">
+						<button class="text-gray-500 hover:text-orange-500">
+							<i class="fas fa-edit"></i>
+						</button>
+						<button class="text-gray-500 hover:text-red-500">
+							<i class="fas fa-trash"></i>
+						</button>
+					</div>
+				</div>
+				<div class="grid grid-cols-3 gap-4 mb-3">
+					<div>
+						<label class="text-sm text-gray-500">Weight (kg)</label>
+						<input type="number" value="24" class="w-full border border-gray-300 rounded p-2">
+					</div>
+					<div>
+						<label class="text-sm text-gray-500">Sets</label>
+						<input type="number" value="3" class="w-full border border-gray-300 rounded p-2">
+					</div>
+					<div>
+						<label class="text-sm text-gray-500">Reps</label>
+						<input type="number" value="10" class="w-full border border-gray-300 rounded p-2">
+					</div>
+				</div>
+				<div>
+					<label class="text-sm text-gray-500">Notes</label>
+					<textarea class="w-full border border-gray-300 rounded p-2" rows="2">Good form, focus on slow negative</textarea>
+				</div>
+			</div>
+
+			<!-- Add New Exercise -->
+			<div class="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition text-center">
+				<button class="text-orange-500 hover:text-orange-700">
+					<i class="fas fa-plus-circle text-2xl mb-2"></i>
+					<p>Add New Exercise</p>
+				</button>
+			</div>
+		</div>
+
+		<!-- Save Button -->
+		<div class="mt-6 flex justify-end">
+			<button class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition">
+				<i class="fas fa-save mr-2"></i>
+				Save Workout
+			</button>
+		</div>
+	</div>
+
+{% endblock %}

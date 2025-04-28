@@ -7,6 +7,8 @@ if (!Encore.isRuntimeEnvironmentConfigured()) {
 }
 
 Encore
+  //tailwind css
+  .enablePostCssLoader()
   // directory where compiled assets will be stored
   .setOutputPath("public/build/")
   // public path used by the web server to access the output path
@@ -24,6 +26,9 @@ Encore
 
   // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
   .splitEntryChunks()
+
+  // enables the Symfony UX Stimulus bridge (used in assets/bootstrap.js)
+  .enableStimulusBridge("./assets/controllers.json")
 
   // enables the Symfony UX Stimulus bridge (used in assets/bootstrap.js)
   .enableStimulusBridge("./assets/controllers.json")

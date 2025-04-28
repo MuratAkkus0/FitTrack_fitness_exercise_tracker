@@ -1,0 +1,58 @@
+<footer class="bg-gray-800 text-white py-12">
+	<div class="container mx-auto px-4">
+		<div class="grid grid-cols-4 gap-8">
+			<div class="space-y-2">
+				{{include('logo.html.twig')}}
+
+				<p class="text-gray-400">Your fitness journey companion.</p>
+			</div>
+			<div>
+				<h3 class="text-lg font-semibold mb-4">Training</h3>
+				<ul class="space-y-2">
+					<li>
+						<a href="#" class="text-gray-400 hover:text-orange-400 transition">Workouts</a>
+					</li>
+					<li>
+						<a href="#" class="text-gray-400 hover:text-orange-400 transition">Programs</a>
+					</li>
+					<li>
+						<a href="#" class="text-gray-400 hover:text-orange-400 transition">Progress</a>
+					</li>
+				</ul>
+			</div>
+			<div>
+				<h3 class="text-lg font-semibold mb-4">Support</h3>
+				<ul class="space-y-2">
+					<li>
+						<a href="#" class="text-gray-400 hover:text-orange-400 transition">Contact</a>
+					</li>
+					<li>
+						<a href="#" class="text-gray-400 hover:text-orange-400 transition">FAQ</a>
+					</li>
+					<li>
+						<a href="#" class="text-gray-400 hover:text-orange-400 transition">Privacy</a>
+					</li>
+				</ul>
+			</div>
+			<div>
+				<h3 class="text-lg font-semibold mb-4">Connect</h3>
+				<div class="flex space-x-4">
+					<a href="#" class="text-gray-400 hover:text-orange-400 transition">
+						<i class="fab fa-instagram"></i>
+					</a>
+					<a href="#" class="text-gray-400 hover:text-orange-400 transition">
+						<i class="fab fa-twitter"></i>
+					</a>
+					<a href="#" class="text-gray-400 hover:text-orange-400 transition">
+						<i class="fab fa-youtube"></i>
+					</a>
+				</div>
+			</div>
+		</div>
+		<div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+			<p>©
+				{{ "now"|date('Y') }}
+				FitTrack. All rights reserved.</p>
+		</div>
+	</div>
+</footer>

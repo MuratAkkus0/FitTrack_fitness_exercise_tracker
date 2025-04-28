@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+	<div class="min-h-screen flex flex-col">
+		{{include('navbar.html.twig')}}
+		<div class="h-12"></div>
+		<div class="flex-[1] px-4 py-8">
+			<div class="grid grid-cols-1 container mx-auto lg:grid-cols-4 gap-8">
+				{{include('sidebar.html.twig')}}
+
+				<!-- Main Content Area -->
+				<div class="lg:col-span-3">
+
+					{% block dashboard_content %}{% endblock %}
+				</div>
+			</div>
+		</div>
+		<div class="h-12"></div>
+		{% include('footer.html.twig') %}
+	</div>
+{% endblock %}

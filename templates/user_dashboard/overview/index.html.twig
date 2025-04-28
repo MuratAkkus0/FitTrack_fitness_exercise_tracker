@@ -1,0 +1,54 @@
+      <div class="col-span-3">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">Total Workouts</p>
+                                <p class="text-3xl font-bold text-indigo-900">127</p>
+                            </div>
+                            <i class="fas fa-dumbbell text-3xl text-orange-400"></i>
+                        </div>
+                        <div class="mt-4">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="h-2 bg-indigo-900 rounded-full w-3/4"></div>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">+12% from last month</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">Current Weight</p>
+                                <p class="text-3xl font-bold text-indigo-900">84kg</p>
+                            </div>
+                            <i class="fas fa-weight text-3xl text-orange-400"></i>
+                        </div>
+                        <div class="mt-4">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="h-2 bg-indigo-900 rounded-full w-1/2"></div>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Goal: 80kg (-4kg)</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">Active Streak</p>
+                                <p class="text-3xl font-bold text-indigo-900">18 Days</p>
+                            </div>
+                            <i class="fas fa-fire text-3xl text-orange-400"></i>
+                        </div>
+                        <div class="mt-4">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="h-2 bg-indigo-900 rounded-full w-2/3"></div>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Personal best: 24 days</p>
+                        </div>
+                    </div>
+                </div>
+
+             {% include "recent_workouts.html.twig" %}
+            </div>

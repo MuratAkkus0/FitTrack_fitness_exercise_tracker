@@ -1,0 +1,26 @@
+<div class="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
+	<h3 class="text-xl font-bold mb-6 text-indigo-900">Workout Menu</h3>
+
+	<nav class="space-y-4">
+		<a href="{{path('app_dashboard_overview')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg cursor-pointer {{app.request.get('_route') == 'app_dashboard_overview' ? 'bg-orange-50':''}}">
+			<i class="fas fa-calendar-day text-orange-400"></i>
+			<span>Overview</span>
+		</a>
+		<a href="{{path('app_dashboard_todaysworkout')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_todaysworkout' ? 'bg-orange-50':''}}">
+			<i class="fas fa-calendar-day text-orange-400"></i>
+			<span>Today's Workout</span>
+		</a>
+		<a href="{{path('app_dashboard_programs')}}" id="showProgramsBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_programs' ? 'bg-orange-50':''}}">
+			<i class="fas fa-dumbbell text-orange-400"></i>
+			<span>My Programs</span>
+		</a>
+		<a id="showHistoryBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_workout_history' ? 'bg-orange-50':''}}">
+			<i class="fas fa-history text-orange-400"></i>
+			<span>Workout History</span>
+		</a>
+		<a href="{{path('app_dashboard_exerciselibrary')}}" id="showExercisesBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_exerciselibrary' ? 'bg-orange-50':''}}">
+			<i class="fas fa-list text-orange-400"></i>
+			<span>Exercise Library</span>
+		</a>
+	</nav>
+</div>

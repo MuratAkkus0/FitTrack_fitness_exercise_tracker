@@ -1,0 +1,84 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block dashboard_content %}
+
+	<div id="exerciseLibrary" class="bg-white rounded-xl shadow-md p-6">
+		<div class="flex justify-between items-center mb-6">
+			<h3 class="text-xl font-bold text-indigo-900">Exercise Library</h3>
+			<div class="relative w-64">
+				<input type="text" placeholder="Search exercises..." class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
+				<i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+			</div>
+		</div>
+
+		<!-- Exercise Categories -->
+		<div class="mb-6">
+			<div class="flex space-x-2 overflow-x-auto pb-2">
+				<button class="bg-orange-500 text-white px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					All Exercises
+				</button>
+				<button class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					Chest
+				</button>
+				<button class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					Back
+				</button>
+				<button class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					Legs
+				</button>
+				<button class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					Shoulders
+				</button>
+				<button class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					Arms
+				</button>
+				<button class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full text-sm whitespace-nowrap">
+					Cardio
+				</button>
+			</div>
+		</div>
+
+		<!-- Exercises Grid -->
+		<div
+			class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+			<!-- Exercise 1 -->
+			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
+				<div class="flex justify-between items-start mb-2">
+					<h4 class="font-semibold">Bench Press</h4>
+					<span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">Chest</span>
+				</div>
+				<p class="text-gray-600 text-sm mb-3">Flat bench press with barbell</p>
+				<button class="text-orange-500 hover:text-orange-700 text-sm">
+					<i class="fas fa-plus mr-1"></i>
+					Add to Program
+				</button>
+			</div>
+
+			<!-- Exercise 2 -->
+			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
+				<div class="flex justify-between items-start mb-2">
+					<h4 class="font-semibold">Squat</h4>
+					<span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">Legs</span>
+				</div>
+				<p class="text-gray-600 text-sm mb-3">Barbell back squat</p>
+				<button class="text-orange-500 hover:text-orange-700 text-sm">
+					<i class="fas fa-plus mr-1"></i>
+					Add to Program
+				</button>
+			</div>
+
+			<!-- Exercise 3 -->
+			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
+				<div class="flex justify-between items-start mb-2">
+					<h4 class="font-semibold">Lat Pulldown</h4>
+					<span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">Back</span>
+				</div>
+				<p class="text-gray-600 text-sm mb-3">Wide grip lat pulldown</p>
+				<button class="text-orange-500 hover:text-orange-700 text-sm">
+					<i class="fas fa-plus mr-1"></i>
+					Add to Program
+				</button>
+			</div>
+		</div>
+	</div>
+{% endblock %}
