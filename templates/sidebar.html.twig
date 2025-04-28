@@ -2,6 +2,7 @@
 	<h3 class="text-xl font-bold mb-6 text-indigo-900">Workout Menu</h3>
 
 	<nav class="space-y-4">
+<<<<<<< HEAD
 		<a href="{{path('app_dashboard_overview')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg cursor-pointer {{app.request.get('_route') == 'app_dashboard_overview' ? 'bg-orange-50':''}}">
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Overview</span>
@@ -22,5 +23,27 @@
 			<i class="fas fa-list text-orange-400"></i>
 			<span>Exercise Library</span>
 		</a>
+=======
+		<button id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 bg-orange-50 p-3 rounded-lg cursor-pointer">
+			<i class="fas fa-calendar-day text-orange-400"></i>
+			<span>Overview</span>
+		</button>
+		<button id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+			<i class="fas fa-calendar-day text-orange-400"></i>
+			<span>Today's Workout</span>
+		</button>
+		<button id="showProgramsBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+			<i class="fas fa-dumbbell text-orange-400"></i>
+			<span>My Programs</span>
+		</button>
+		<button id="showHistoryBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+			<i class="fas fa-history text-orange-400"></i>
+			<span>Workout History</span>
+		</button>
+		<button id="showExercisesBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+			<i class="fas fa-list text-orange-400"></i>
+			<span>Exercise Library</span>
+		</button>
+>>>>>>> 289bc00 (Home Page UI, Dashboard Overview UI, Dashboard Exercise Library UI, Dashboard Todays Workout UI, Dashboard My Programs UI and some Atomic App UI components are done.For first step they are just spaghetti coded yet.  Dashboard routes are done too.)
 	</nav>
 </div>
