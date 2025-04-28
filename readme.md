@@ -12,6 +12,8 @@ A Symfony-based web application for gym members to track their workout programs 
 
 ## Key Features
 
+sa
+
 ### User System
 
 - Registration and login functionality
