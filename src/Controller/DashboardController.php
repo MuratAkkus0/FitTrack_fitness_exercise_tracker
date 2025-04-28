@@ -9,10 +9,14 @@ use Symfony\Component\Routing\Annotation\Route;
 class DashboardController extends AbstractController
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   #[Route('/','app_dashboard_overview')]
 =======
   #[Route('/')]
 >>>>>>> 289bc00 (Home Page UI, Dashboard Overview UI, Dashboard Exercise Library UI, Dashboard Todays Workout UI, Dashboard My Programs UI and some Atomic App UI components are done.For first step they are just spaghetti coded yet.  Dashboard routes are done too.)
+=======
+  #[Route('/','app_dashboard_overview')]
+>>>>>>> c55a49d (Dashboard main route named as dashboard_overview. dashboard sidebars links are created and they are able to change their bg-color according to active page now)
     public function index(): Response
     {
        return $this->render('user_dashboard/index.html.twig');
