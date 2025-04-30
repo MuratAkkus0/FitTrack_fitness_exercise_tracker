@@ -40,22 +40,23 @@ class Users
     private Collection $training_program_id;
 
     /**
-     * @var Collection<int, WorkoutLog>
+     * @var Collection<int, TrainingProgram>
      */
-    #[ORM\OneToMany(targetEntity: WorkoutLog::class, mappedBy: 'user_id')]
-    private Collection $program_id;
+    #[ORM\OneToMany(targetEntity: TrainingProgram::class, mappedBy: 'users')]
+    private Collection $training_programs;
 
     /**
-     * @var Collection<int, BlogPost>
+     * @var Collection<int, WorkoutLogs>
      */
-    #[ORM\OneToMany(targetEntity: BlogPost::class, mappedBy: 'user_id')]
-    private Collection $blog_posts;
+    #[ORM\OneToMany(targetEntity: WorkoutLogs::class, mappedBy: 'user_id')]
+    private Collection $workoutLogs;
+
 
     public function __construct()
     {
         $this->training_program_id = new ArrayCollection();
-        $this->program_id = new ArrayCollection();
-        $this->blog_posts = new ArrayCollection();
+        $this->training_programs = new ArrayCollection();
+        $this->workoutLogs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -142,30 +143,31 @@ class Users
         return $this;
     }
 
+
     /**
      * @return Collection<int, TrainingProgram>
      */
-    public function getTrainingProgramId(): Collection
+    public function getTrainingPrograms(): Collection
     {
-        return $this->training_program_id;
+        return $this->training_programs;
     }
 
-    public function addTrainingProgramId(TrainingProgram $trainingProgramId): static
+    public function addTrainingProgram(TrainingProgram $trainingProgram): static
     {
-        if (!$this->training_program_id->contains($trainingProgramId)) {
-            $this->training_program_id->add($trainingProgramId);
-            $trainingProgramId->setId($this);
+        if (!$this->training_programs->contains($trainingProgram)) {
+            $this->training_programs->add($trainingProgram);
+            $trainingProgram->setUsers($this);
         }
 
         return $this;
     }
 
-    public function removeTrainingProgramId(TrainingProgram $trainingProgramId): static
+    public function removeTrainingProgram(TrainingProgram $trainingProgram): static
     {
-        if ($this->training_program_id->removeElement($trainingProgramId)) {
+        if ($this->training_programs->removeElement($trainingProgram)) {
             // set the owning side to null (unless already changed)
-            if ($trainingProgramId->getId() === $this) {
-                $trainingProgramId->setId(null);
+            if ($trainingProgram->getUsers() === $this) {
+                $trainingProgram->setUsers(null);
             }
         }
 
@@ -173,62 +175,34 @@ class Users
     }
 
     /**
-     * @return Collection<int, WorkoutLog>
+     * @return Collection<int, WorkoutLogs>
      */
-    public function getProgramId(): Collection
+    public function getWorkoutLogs(): Collection
     {
-        return $this->program_id;
+        return $this->workoutLogs;
     }
 
-    public function addProgramId(WorkoutLog $programId): static
+    public function addWorkoutLog(WorkoutLogs $workoutLog): static
     {
-        if (!$this->program_id->contains($programId)) {
-            $this->program_id->add($programId);
-            $programId->setUserId($this);
+        if (!$this->workoutLogs->contains($workoutLog)) {
+            $this->workoutLogs->add($workoutLog);
+            $workoutLog->setUserId($this);
         }
 
         return $this;
     }
 
-    public function removeProgramId(WorkoutLog $workoutLogId): static
+    public function removeWorkoutLog(WorkoutLogs $workoutLog): static
     {
-        if ($this->program_id->removeElement($workoutLogId)) {
+        if ($this->workoutLogs->removeElement($workoutLog)) {
             // set the owning side to null (unless already changed)
-            if ($workoutLogId->getUserId() === $this) {
-                $workoutLogId->setUserId(null);
+            if ($workoutLog->getUserId() === $this) {
+                $workoutLog->setUserId(null);
             }
         }
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, BlogPost>
-     */
-    public function getBlogPosts(): Collection
-    {
-        return $this->blog_posts;
-    }
-
-    public function addBlogPost(BlogPost $blogPost): static
-    {
-        if (!$this->blog_posts->contains($blogPost)) {
-            $this->blog_posts->add($blogPost);
-            $blogPost->setUserId($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBlogPost(BlogPost $blogPost): static
-    {
-        if ($this->blog_posts->removeElement($blogPost)) {
-            // set the owning side to null (unless already changed)
-            if ($blogPost->getUserId() === $this) {
-                $blogPost->setUserId(null);
-            }
-        }
-
-        return $this;
-    }
+    
 }
