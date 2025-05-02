@@ -26,6 +26,7 @@ class WorkoutLogDetailsFixtures extends Fixture implements DependentFixtureInter
         $workoutLogDetails->setWeight(15);
 
         $manager->persist($workoutLogDetails);
+
         // Add to pivot table
         $this->addReference('workout_log_detail_1', $workoutLogDetails);
         $this->getReference('workout_log_1', WorkoutLogs::class)->addWorkoutLogDetail($workoutLogDetails);
