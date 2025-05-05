@@ -2,8 +2,7 @@
 	<h3 class="text-xl font-bold mb-6 text-indigo-900">Workout Menu</h3>
 
 	<nav class="space-y-4">
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 		<a href="{{path('app_dashboard_overview')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg cursor-pointer {{app.request.get('_route') == 'app_dashboard_overview' ? 'bg-orange-50':''}}">
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Overview</span>
@@ -24,11 +23,8 @@
 			<i class="fas fa-list text-orange-400"></i>
 			<span>Exercise Library</span>
 		</a>
-=======
 		<button id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 bg-orange-50 p-3 rounded-lg cursor-pointer">
-=======
 		<a href="{{path('app_dashboard_overview')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg cursor-pointer {{app.request.get('_route') == 'app_dashboard_overview' ? 'bg-orange-50':''}}">
->>>>>>> c55a49d (Dashboard main route named as dashboard_overview. dashboard sidebars links are created and they are able to change their bg-color according to active page now)
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Overview</span>
 		</a>
@@ -47,11 +43,7 @@
 		<a href="{{path('app_dashboard_exerciselibrary')}}" id="showExercisesBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_exerciselibrary' ? 'bg-orange-50':''}}">
 			<i class="fas fa-list text-orange-400"></i>
 			<span>Exercise Library</span>
-<<<<<<< HEAD
 		</button>
->>>>>>> 289bc00 (Home Page UI, Dashboard Overview UI, Dashboard Exercise Library UI, Dashboard Todays Workout UI, Dashboard My Programs UI and some Atomic App UI components are done.For first step they are just spaghetti coded yet.  Dashboard routes are done too.)
-=======
 		</a>
->>>>>>> c55a49d (Dashboard main route named as dashboard_overview. dashboard sidebars links are created and they are able to change their bg-color according to active page now)
 	</nav>
 </div>
