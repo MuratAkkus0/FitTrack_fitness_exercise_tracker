@@ -1,28 +1,59 @@
-<div class="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
-	<h3 class="text-xl font-bold mb-6 text-indigo-900">Workout Menu</h3>
+{% set mobileSidebar = mobileSidebar|default(false) %}
+<div class="{{not mobileSidebar ? 'lg:col-span-1' : ''}} bg-white rounded-xl shadow-md p-4 md:p-6">
+	{% if not mobileSidebar %}
+		<h3 class="text-xl font-bold mb-4 md:mb-6 text-indigo-900">Workout Menu</h3>
+	{% endif %}
 
-	<nav class="space-y-4">
-
-		<a href="{{path('app_dashboard_overview')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg cursor-pointer {{app.request.get('_route') == 'app_dashboard_overview' ? 'bg-orange-50':''}}">
+	<nav class="space-y-2 md:space-y-4">
+		<a href="{{path('app_dashboard_overview')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg cursor-pointer {{app.request.get('_route') == 'app_dashboard_overview' ? 'bg-orange-50':''}}">
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Overview</span>
 		</a>
-		<a href="{{path('app_dashboard_todaysworkout')}}" id="showTodayBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_todaysworkout' ? 'bg-orange-50':''}}">
+		<a href="{{path('app_dashboard_today')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_today' ? 'bg-orange-50':''}}">
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Today's Workout</span>
 		</a>
-		<a href="{{path('app_dashboard_programs')}}" id="showProgramsBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_programs' ? 'bg-orange-50':''}}">
+		<a href="{{path('app_programs_index')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_programs' ? 'bg-orange-50':''}}">
 			<i class="fas fa-dumbbell text-orange-400"></i>
 			<span>My Programs</span>
 		</a>
-		<a id="showHistoryBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_workout_history' ? 'bg-orange-50':''}}">
+		<a href="{{path('app_workout_history')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_workout' ? 'bg-orange-50':''}}">
 			<i class="fas fa-history text-orange-400"></i>
 			<span>Workout History</span>
 		</a>
-		<a href="{{path('app_dashboard_exerciselibrary')}}" id="showExercisesBtn" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_exerciselibrary' ? 'bg-orange-50':''}}">
+		<a href="{{path('app_exercises_index')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_exercises' ? 'bg-orange-50':''}}">
 			<i class="fas fa-list text-orange-400"></i>
 			<span>Exercise Library</span>
 		</a>
-		
+		<a href="{{path('app_exercises_favorites')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_exercises_favorites' ? 'bg-orange-50':''}}">
+			<i class="fas fa-heart text-orange-400"></i>
+			<span>Favorite Exercises</span>
+		</a>
+
+		<!-- Blog Section -->
+		<div class="border-t border-gray-200 pt-4 mt-4">
+			<h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Community</h4>
+			<a href="{{path('app_blog_index')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_blog' ? 'bg-orange-50':''}}">
+				<i class="fas fa-blog text-orange-400"></i>
+				<span>Community Blog</span>
+			</a>
+			<a href="{{path('app_blog_my_posts')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_blog_my_posts' ? 'bg-orange-50':''}}">
+				<i class="fas fa-user-edit text-orange-400"></i>
+				<span>My Posts</span>
+			</a>
+		</div>
+
+		<!-- Goals Section -->
+		<div class="border-t border-gray-200 pt-4 mt-4">
+			<h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Progress</h4>
+			<a href="{{path('app_goals_index')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_goals' ? 'bg-orange-50':''}}">
+				<i class="fas fa-target text-orange-400"></i>
+				<span>Fitness Goals</span>
+			</a>
+			<a href="{{path('app_progress_index')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_progress' ? 'bg-orange-50':''}}">
+				<i class="fas fa-chart-line text-orange-400"></i>
+				<span>Progress Analytics</span>
+			</a>
+		</div>
 	</nav>
 </div>
