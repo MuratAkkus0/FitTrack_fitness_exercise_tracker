@@ -1,0 +1,157 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block title %}
+	{{ post.title }}
+{% endblock %}
+
+{% block content %}
+	<div class="max-w-4xl mx-auto" data-controller="blog-post">
+		<div
+			class="bg-white rounded-lg shadow-md p-6">
+			<!-- Header with navigation -->
+			<div class="flex items-center justify-between mb-6">
+				<a href="{{ path('app_blog_index') }}" class="text-blue-600 hover:text-blue-800 flex items-center">
+					<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+					</svg>
+					Back to Community Blog
+				</a>
+
+				{% if post.user == app.user %}
+					<div class="space-x-2">
+						<a href="{{ path('app_blog_edit', {'id': post.id}) }}" class="text-blue-600 hover:text-blue-800 px-3 py-1 border border-blue-600 rounded-md hover:bg-blue-50">
+							Edit Post
+						</a>
+						<button data-action="click->blog-post#deletePost" data-blog-post-post-id-param="{{ post.id }}" class="text-red-600 hover:text-red-800 px-3 py-1 border border-red-600 rounded-md hover:bg-red-50">
+							Delete Post
+						</button>
+					</div>
+				{% endif %}
+			</div>
+
+			<!-- Post header -->
+			<div class="mb-6">
+				<div class="flex items-center space-x-2 mb-3">
+					<h1 class="text-3xl font-bold text-gray-900">{{ post.title }}</h1>
+					{% if post.isPublic %}
+						<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+							Public
+						</span>
+					{% else %}
+						<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+							Private
+						</span>
+					{% endif %}
+				</div>
+
+				<!-- Author info -->
+				<div class="flex items-center space-x-3">
+					<div class="flex-shrink-0">
+						{% if post.user.profileImage %}
+							<img class="h-10 w-10 rounded-full object-cover" src="{{ asset('uploads/profiles/' ~ post.user.profileImage) }}" alt="Profile">
+						{% else %}
+							<div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+								<span class="text-white font-medium">{{ post.user.name|first|upper }}{{ post.user.surname|first|upper }}</span>
+							</div>
+						{% endif %}
+					</div>
+					<div>
+						<div class="font-medium text-gray-900">{{ post.user.name }}
+							{{ post.user.surname }}</div>
+						<div class="text-sm text-gray-500">
+							{{ post.createdAt|date('F j, Y \\a\\t g:i A') }}
+							{% if post.workoutLog %}
+								<span class="ml-2 inline-flex items-center">
+									<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+									</svg>
+									Shared from workout
+								</span>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Workout details if applicable -->
+			{% if post.workoutLog %}
+				<div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6 border border-blue-200">
+					<div class="flex items-center mb-4">
+						<svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+						</svg>
+						<h2 class="text-lg font-semibold text-gray-900">Workout Summary</h2>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+						<div class="text-center">
+							<div class="text-2xl font-bold text-blue-600">{{ post.workoutLog.duration }}</div>
+							<div class="text-sm text-gray-600">Minutes</div>
+						</div>
+						<div class="text-center">
+							<div class="text-2xl font-bold text-green-600">{{ post.workoutLog.workoutLogDetails|length }}</div>
+							<div class="text-sm text-gray-600">Exercises</div>
+						</div>
+						<div class="text-center">
+							<div class="text-2xl font-bold text-purple-600">{{ post.workoutLog.createdAt|date('M d, Y') }}</div>
+							<div class="text-sm text-gray-600">Workout Date</div>
+						</div>
+					</div>
+
+					{% if post.workoutLog.workoutLogDetails|length > 0 %}
+						<div>
+							<h3 class="font-medium text-gray-900 mb-3">Exercises Performed:</h3>
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+								{% for detail in post.workoutLog.workoutLogDetails %}
+									<div class="bg-white rounded-lg p-3 border border-blue-100">
+										<div class="font-medium text-gray-900">{{ detail.trainingExercise.exerciseName }}</div>
+										<div class="text-sm text-gray-600 mt-1">
+											{{ detail.sets }}
+											sets ×
+											{{ detail.reps }}
+											reps
+											{% if detail.weight %}
+												@
+												{{ detail.weight }}kg
+											{% endif %}
+										</div>
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					{% endif %}
+				</div>
+			{% endif %}
+
+			<!-- Post content -->
+			<div class="prose max-w-none">
+				<div class="text-gray-700 text-lg leading-relaxed whitespace-pre-line">{{ post.content }}</div>
+			</div>
+
+			<!-- Post actions -->
+			<div class="mt-8 pt-6 border-t border-gray-200">
+				<div class="flex items-center justify-between">
+					<div class="text-sm text-gray-500">
+						Posted
+						{{ post.createdAt|date('F j, Y') }}
+					</div>
+
+					<div class="flex space-x-4">
+						{% if post.user == app.user %}
+							<a href="{{ path('app_blog_edit', {'id': post.id}) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+								Edit Post
+							</a>
+						{% endif %}
+
+						<a href="{{ path('app_blog_index') }}" class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+							View All Posts
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Success/Error Messages -->
+	<div data-blog-post-target="messageContainer" class="fixed top-4 right-4 z-50"></div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block title %}Edit Post
+{% endblock %}
+
+{% block content %}
+	<div data-controller="blog" data-blog-update-url-value="{{ path('app_blog_edit', {'id': post.id}) }}" data-blog-post-id-value="{{ post.id }}" data-blog-max-characters-value="5000" class="max-w-4xl mx-auto">
+		<div class="bg-white rounded-lg shadow-md p-6">
+			<div class="flex items-center justify-between mb-6">
+				<h1 class="text-2xl font-bold text-gray-900">Edit Post</h1>
+				<div class="space-x-3">
+					<a href="{{ path('app_blog_view', {'id': post.id}) }}" class="text-gray-600 hover:text-gray-800">
+						View Post
+					</a>
+					<a href="{{ path('app_blog_my_posts') }}" class="text-blue-600 hover:text-blue-800">
+						My Posts
+					</a>
+				</div>
+			</div>
+
+			<!-- Workout details if applicable -->
+			{% if post.workoutLog %}
+				<div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-200">
+					<div class="flex items-center mb-2">
+						<svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+						</svg>
+						<span class="font-medium text-gray-900">This post is linked to a workout</span>
+					</div>
+					<div class="text-sm text-gray-600">
+						{{ post.workoutLog.duration }}
+						minutes •
+						{{ post.workoutLog.workoutLogDetails|length }}
+						exercises •
+						{{ post.workoutLog.createdAt|date('M d, Y') }}
+					</div>
+				</div>
+			{% endif %}
+
+			<!-- Edit Form -->
+			<form data-blog-target="form" data-action="submit->blog#submitForm" class="space-y-6">
+				<div>
+					<label for="title" class="block text-sm font-medium text-gray-700 mb-2">Post Title</label>
+					<input type="text" data-blog-target="titleInput" data-action="input->blog#onContentInput" name="title" value="{{ post.title }}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+				</div>
+
+				<div>
+					<label for="content" class="block text-sm font-medium text-gray-700 mb-2">Content</label>
+					<textarea data-blog-target="contentTextarea" data-action="input->blog#onContentInput" name="content" rows="12" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>{{ post.content }}</textarea>
+					<div class="flex justify-between items-center mt-2">
+						<p class="text-sm text-gray-500">You can use line breaks to format your content.</p>
+						<div class="text-sm text-gray-500">
+							<span data-blog-target="characterCount">{{ post.content|length }}</span>/5000 characters
+																															(<span data-blog-target="wordCount">{{ post.content ? post.content|split(' ')|length : 0 }}</span>
+							words)
+						</div>
+					</div>
+				</div>
+
+				<div class="flex items-center space-x-4">
+					<div class="flex items-center">
+						<input type="checkbox" data-action="change->blog#onContentInput" name="is_public" {% if post.isPublic %} checked {% endif %} class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+						<label class="ml-2 block text-sm text-gray-700">
+							Make this post public (visible to all community members)
+						</label>
+					</div>
+				</div>
+
+				<!-- Preview Section -->
+				<div id="previewSection" class="hidden">
+					<h3 class="text-lg font-medium text-gray-900 mb-3">Preview</h3>
+					<div class="bg-gray-50 rounded-lg p-4 border">
+						<div class="flex items-start space-x-3">
+							<div class="flex-shrink-0">
+								{% if app.user.profileImage %}
+									<img class="h-10 w-10 rounded-full object-cover" src="{{ asset('uploads/profiles/' ~ app.user.profileImage) }}" alt="Profile">
+								{% else %}
+									<div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+										<span class="text-white font-medium">{{ app.user.name|first|upper }}{{ app.user.surname|first|upper }}</span>
+									</div>
+								{% endif %}
+							</div>
+							<div class="flex-1">
+								<div class="flex items-center space-x-2">
+									<h4 class="font-medium text-gray-900">{{ app.user.name }}
+										{{ app.user.surname }}</h4>
+									<span class="text-sm text-gray-500">{{ post.createdAt|date('M d, Y') }}</span>
+									<span id="previewVisibility" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"></span>
+								</div>
+								<h5 id="previewTitle" class="font-medium text-gray-900 mt-1"></h5>
+								<div id="previewContent" class="text-gray-700 mt-2 whitespace-pre-line"></div>
+
+								{% if post.workoutLog %}
+									<div class="mt-3 p-3 bg-white rounded border border-gray-200">
+										<div class="text-sm text-gray-600 mb-2">🏋️ Workout Summary</div>
+										<div class="flex space-x-4 text-sm">
+											<span>
+												<strong>{{ post.workoutLog.duration }}</strong>
+												minutes</span>
+											<span>
+												<strong>{{ post.workoutLog.workoutLogDetails|length }}</strong>
+												exercises</span>
+											<span>
+												<strong>{{ post.workoutLog.createdAt|date('M d') }}</strong>
+											</span>
+										</div>
+									</div>
+								{% endif %}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="flex justify-between items-center pt-4">
+					<button type="button" data-blog-target="previewBtn" data-action="click->blog#openPreview" class="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+						Show Preview
+					</button>
+
+					<div class="space-x-3">
+						<a href="{{ path('app_blog_view', {'id': post.id}) }}" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500">
+							Cancel
+						</a>
+						<button type="submit" data-blog-target="submitBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+							Update Post
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Success/Error Messages -->
+	<div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+
+
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block title %}Share Your Workout
+{% endblock %}
+
+{% block content %}
+	<div class="max-w-4xl mx-auto" data-controller="workout-blog" data-workout-blog-create-url-value="{{ path('app_blog_create_from_workout', {'workoutId': workout.id}) }}">
+		<div class="bg-white rounded-lg shadow-md p-6">
+			<div class="flex items-center justify-between mb-6">
+				<h1 class="text-2xl font-bold text-gray-900">Share Your Workout</h1>
+				<a href="{{ path('app_workout_history') }}" class="text-blue-600 hover:text-blue-800 flex items-center">
+					<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+					</svg>
+					Back to Workout History
+				</a>
+			</div>
+
+			<!-- Workout Summary Card -->
+			<div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6 border border-blue-200">
+				<h2 class="text-lg font-semibold text-gray-900 mb-4">Workout Summary</h2>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div class="text-center">
+						<div class="text-2xl font-bold text-blue-600">{{ workout.duration }}</div>
+						<div class="text-sm text-gray-600">Minutes</div>
+					</div>
+					<div class="text-center">
+						<div class="text-2xl font-bold text-green-600">{{ workout.workoutLogDetails|length }}</div>
+						<div class="text-sm text-gray-600">Exercises</div>
+					</div>
+					<div class="text-center">
+						<div class="text-2xl font-bold text-purple-600">{{ workout.createdAt|date('M d, Y') }}</div>
+						<div class="text-sm text-gray-600">Date</div>
+					</div>
+				</div>
+
+				{% if workout.workoutLogDetails|length > 0 %}
+					<div class="mt-4">
+						<h3 class="font-medium text-gray-900 mb-2">Exercises Performed:</h3>
+						<div class="flex flex-wrap gap-2">
+							{% for detail in workout.workoutLogDetails %}
+								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+									{{ detail.trainingExercise.exerciseName }}
+								</span>
+							{% endfor %}
+						</div>
+					</div>
+				{% endif %}
+			</div>
+
+			<!-- Blog Post Creation Form -->
+			<form data-workout-blog-target="form" data-action="submit->workout-blog#submitForm" class="space-y-6">
+				<div>
+					<label for="title" class="block text-sm font-medium text-gray-700 mb-2">Post Title</label>
+					<input type="text" data-workout-blog-target="titleInput" name="title" value="My {{ workout.duration }}-minute workout on {{ workout.createdAt|date('M d, Y') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+				</div>
+
+				<div>
+					<label for="content" class="block text-sm font-medium text-gray-700 mb-2">Share Your Experience</label>
+					<textarea data-workout-blog-target="contentTextarea" name="content" rows="8" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Tell the community about your workout experience, how you felt, what you achieved, or any tips you'd like to share..." required>Just completed an amazing
+						{{ workout.duration }}-minute workout! 💪
+																																																												
+																																																												Here's what I accomplished:
+						{% for detail in workout.workoutLogDetails %}
+							•
+							{{ detail.trainingExercise.exerciseName }}:
+							{{ detail.sets }}
+							sets x
+							{{ detail.reps }}
+							reps
+							{% if detail.weight %}
+								@
+								{{ detail.weight }}kg
+							{% endif %}
+						{% endfor %}
+
+						{% if workout.duration >= 60 %}
+							This was a challenging session that really pushed my limits. Feeling accomplished and energized!
+						{% else %}
+							A quick but effective workout session. Sometimes shorter workouts can be just as rewarding!
+						{% endif %}
+
+						#fitness #workout #training #progress</textarea>
+				</div>
+
+				<div class="flex items-center space-x-4">
+					<div class="flex items-center">
+						<input type="checkbox" id="is_public" name="is_public" checked class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+						<label for="is_public" class="ml-2 block text-sm text-gray-700">
+							Make this post public (visible to all community members)
+						</label>
+					</div>
+				</div>
+
+				<!-- Preview Section -->
+				<div data-workout-blog-target="previewSection" class="hidden">
+					<h3 class="text-lg font-medium text-gray-900 mb-3">Preview</h3>
+					<div class="bg-gray-50 rounded-lg p-4 border">
+						<div class="flex items-start space-x-3">
+							<div class="flex-shrink-0">
+								{% if app.user.profileImage %}
+									<img class="h-10 w-10 rounded-full object-cover" src="{{ asset('uploads/profiles/' ~ app.user.profileImage) }}" alt="Profile">
+								{% else %}
+									<div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+										<span class="text-white font-medium">{{ app.user.name|first|upper }}{{ app.user.surname|first|upper }}</span>
+									</div>
+								{% endif %}
+							</div>
+							<div class="flex-1">
+								<div class="flex items-center space-x-2">
+									<h4 class="font-medium text-gray-900">{{ app.user.name }}
+										{{ app.user.surname }}</h4>
+									<span class="text-sm text-gray-500">just now</span>
+								</div>
+								<h5 data-workout-blog-target="previewTitle" class="font-medium text-gray-900 mt-1"></h5>
+								<div data-workout-blog-target="previewContent" class="text-gray-700 mt-2 whitespace-pre-line"></div>
+								<div class="mt-3 p-3 bg-white rounded border border-gray-200">
+									<div class="text-sm text-gray-600 mb-2">🏋️ Workout Summary</div>
+									<div class="flex space-x-4 text-sm">
+										<span>
+											<strong>{{ workout.duration }}</strong>
+											minutes</span>
+										<span>
+											<strong>{{ workout.workoutLogDetails|length }}</strong>
+											exercises</span>
+										<span>
+											<strong>{{ workout.createdAt|date('M d') }}</strong>
+										</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="flex justify-between items-center pt-4">
+					<button type="button" data-workout-blog-target="previewBtn" data-action="click->workout-blog#togglePreview" class="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+						Show Preview
+					</button>
+
+					<div class="space-x-3">
+						<a href="{{ path('app_workout_history') }}" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500">
+							Cancel
+						</a>
+						<button type="submit" data-workout-blog-target="submitBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+							Share Workout
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Success/Error Messages -->
+	<div data-workout-blog-target="messageContainer" class="fixed top-4 right-4 z-50"></div>
+{% endblock %}
