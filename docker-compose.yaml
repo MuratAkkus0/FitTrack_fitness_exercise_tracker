@@ -1,0 +1,38 @@
+volumes:
+  mysql_data:
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - 8080:80
+    volumes:
+      - .:/var/www/php
+    environment:
+      - PHP_FPM_HOST=php-fpm
+    depends_on:
+      - php-fpm
+  php-fpm:
+    build:
+      context: .
+      dockerfile: docker/php/Dockernbfile
+      args:
+        - IS_DEV=1
+    links:
+      - db
+    environment:
+      - XDEBUG_MODE=debug
+    volumes:
+      - .:/var/www/php
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=app
+    ports:
+      - 33006:3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
