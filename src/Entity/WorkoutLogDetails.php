@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\WorkoutLogDetailsRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: WorkoutLogDetailsRepository::class)]
 class WorkoutLogDetails
@@ -15,29 +16,35 @@ class WorkoutLogDetails
     private ?int $id = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: 'Tekrar sayısı boş olamaz')]
+    #[Assert\Range(min: 1, max: 1000, notInRangeMessage: 'Tekrar sayısı {{ min }} ile {{ max }} arasında olmalıdır')]
     private ?int $reps = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
+    #[Assert\NotBlank(message: 'Ağırlık boş olamaz')]
+    #[Assert\Range(min: 0, max: 999.99, notInRangeMessage: 'Ağırlık {{ min }} ile {{ max }} kg arasında olmalıdır')]
     private ?string $weight = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: 'Set sayısı boş olamaz')]
+    #[Assert\Range(min: 1, max: 50, notInRangeMessage: 'Set sayısı {{ min }} ile {{ max }} arasında olmalıdır')]
     private ?int $sets = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $notes = null;
 
     #[ORM\ManyToOne(inversedBy: 'workoutLogDetails')]
-    private ?WorkoutLogs $log_id = null;
+    private ?WorkoutLogs $workoutLog = null;
 
     #[ORM\ManyToOne(inversedBy: 'workoutLogDetails')]
-    private ?TrainingExercises $exercise_id = null;
+    private ?TrainingExercises $exercise = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function setId(string $id): static
+    public function setId(int $id): static
     {
         $this->id = $id;
 
@@ -92,26 +99,26 @@ class WorkoutLogDetails
         return $this;
     }
 
-    public function getLogId(): ?WorkoutLogs
+    public function getWorkoutLog(): ?WorkoutLogs
     {
-        return $this->log_id;
+        return $this->workoutLog;
     }
 
-    public function setLogId(?WorkoutLogs $log_id): static
+    public function setWorkoutLog(?WorkoutLogs $workoutLog): static
     {
-        $this->log_id = $log_id;
+        $this->workoutLog = $workoutLog;
 
         return $this;
     }
 
-    public function getExerciseId(): ?TrainingExercises
+    public function getExercise(): ?TrainingExercises
     {
-        return $this->exercise_id;
+        return $this->exercise;
     }
 
-    public function setExerciseId(?TrainingExercises $exercise_id): static
+    public function setExercise(?TrainingExercises $exercise): static
     {
-        $this->exercise_id = $exercise_id;
+        $this->exercise = $exercise;
 
         return $this;
     }

@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UsersRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -22,6 +23,9 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: 'E-posta adresi boş olamaz')]
+    #[Assert\Email(message: 'Geçerli bir e-posta adresi giriniz')]
+    #[Assert\Length(max: 180, maxMessage: 'E-posta adresi {{ limit }} karakterden uzun olamaz')]
     private ?string $email = null;
 
     /**
@@ -37,19 +41,23 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 45)]
+    #[Assert\NotBlank(message: 'Ad boş olamaz')]
+    #[Assert\Length(min: 2, max: 45, minMessage: 'Ad en az {{ limit }} karakter olmalıdır', maxMessage: 'Ad {{ limit }} karakterden uzun olamaz')]
     private ?string $name = null;
 
     #[ORM\Column(length: 45)]
+    #[Assert\NotBlank(message: 'Soyad boş olamaz')]
+    #[Assert\Length(min: 2, max: 45, minMessage: 'Soyad en az {{ limit }} karakter olmalıdır', maxMessage: 'Soyad {{ limit }} karakterden uzun olamaz')]
     private ?string $surname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $profile_image = null;
 
-    /**
-     * @var Collection<int, TrainingProgram>
-     */
-    #[ORM\OneToMany(targetEntity: TrainingProgram::class, mappedBy: 'id')]
-    private Collection $training_program_id;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $resetToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $resetTokenExpiresAt = null;
 
     /**
      * @var Collection<int, TrainingProgram>
@@ -60,15 +68,28 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, WorkoutLogs>
      */
-    #[ORM\OneToMany(targetEntity: WorkoutLogs::class, mappedBy: 'user_id')]
+    #[ORM\OneToMany(targetEntity: WorkoutLogs::class, mappedBy: 'user')]
     private Collection $workoutLogs;
+
+    /**
+     * @var Collection<int, FitnessGoal>
+     */
+    #[ORM\OneToMany(targetEntity: FitnessGoal::class, mappedBy: 'user')]
+    private Collection $fitnessGoals;
+
+    /**
+     * @var Collection<int, BlogPost>
+     */
+    #[ORM\OneToMany(targetEntity: BlogPost::class, mappedBy: 'user')]
+    private Collection $blogPosts;
 
 
     public function __construct()
     {
-        $this->training_program_id = new ArrayCollection();
         $this->training_programs = new ArrayCollection();
         $this->workoutLogs = new ArrayCollection();
+        $this->fitnessGoals = new ArrayCollection();
+        $this->blogPosts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -182,6 +203,29 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getResetToken(): ?string
+    {
+        return $this->resetToken;
+    }
+
+    public function setResetToken(?string $resetToken): static
+    {
+        $this->resetToken = $resetToken;
+
+        return $this;
+    }
+
+    public function getResetTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->resetTokenExpiresAt;
+    }
+
+    public function setResetTokenExpiresAt(?\DateTimeImmutable $resetTokenExpiresAt): static
+    {
+        $this->resetTokenExpiresAt = $resetTokenExpiresAt;
+
+        return $this;
+    }
 
     /**
      * @return Collection<int, TrainingProgram>
@@ -225,7 +269,7 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->workoutLogs->contains($workoutLog)) {
             $this->workoutLogs->add($workoutLog);
-            $workoutLog->setUserId($this);
+            $workoutLog->setUser($this);
         }
 
         return $this;
@@ -235,8 +279,68 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->workoutLogs->removeElement($workoutLog)) {
             // set the owning side to null (unless already changed)
-            if ($workoutLog->getUserId() === $this) {
-                $workoutLog->setUserId(null);
+            if ($workoutLog->getUser() === $this) {
+                $workoutLog->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FitnessGoal>
+     */
+    public function getFitnessGoals(): Collection
+    {
+        return $this->fitnessGoals;
+    }
+
+    public function addFitnessGoal(FitnessGoal $fitnessGoal): static
+    {
+        if (!$this->fitnessGoals->contains($fitnessGoal)) {
+            $this->fitnessGoals->add($fitnessGoal);
+            $fitnessGoal->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFitnessGoal(FitnessGoal $fitnessGoal): static
+    {
+        if ($this->fitnessGoals->removeElement($fitnessGoal)) {
+            // set the owning side to null (unless already changed)
+            if ($fitnessGoal->getUser() === $this) {
+                $fitnessGoal->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, BlogPost>
+     */
+    public function getBlogPosts(): Collection
+    {
+        return $this->blogPosts;
+    }
+
+    public function addBlogPost(BlogPost $blogPost): static
+    {
+        if (!$this->blogPosts->contains($blogPost)) {
+            $this->blogPosts->add($blogPost);
+            $blogPost->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBlogPost(BlogPost $blogPost): static
+    {
+        if ($this->blogPosts->removeElement($blogPost)) {
+            // set the owning side to null (unless already changed)
+            if ($blogPost->getUser() === $this) {
+                $blogPost->setUser(null);
             }
         }
 

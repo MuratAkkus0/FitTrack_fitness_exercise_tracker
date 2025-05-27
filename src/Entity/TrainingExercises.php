@@ -25,6 +25,15 @@ class TrainingExercises
     #[ORM\Column(type: 'string', enumType: EnumMuscleGroup::class)]
     private ?EnumMuscleGroup $target_muscle_group = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $image_url = null;
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $video_url = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $instructions = null;
+
     /**
      * @var Collection<int, TrainingProgram>
      */
@@ -34,7 +43,7 @@ class TrainingExercises
     /**
      * @var Collection<int, WorkoutLogDetails>
      */
-    #[ORM\OneToMany(targetEntity: WorkoutLogDetails::class, mappedBy: 'exercise_id')]
+    #[ORM\OneToMany(targetEntity: WorkoutLogDetails::class, mappedBy: 'exercise')]
     private Collection $workoutLogDetails;
 
     public function __construct()
@@ -48,7 +57,7 @@ class TrainingExercises
         return $this->id;
     }
 
-    public function setId(string $id): static
+    public function setId(int $id): static
     {
         $this->id = $id;
 
@@ -66,8 +75,6 @@ class TrainingExercises
 
         return $this;
     }
-
-
 
     public function getDescription(): ?string
     {
@@ -89,6 +96,42 @@ class TrainingExercises
     public function setTargetMuscleGroup(?EnumMuscleGroup $target_muscle_group): static
     {
         $this->target_muscle_group = $target_muscle_group;
+
+        return $this;
+    }
+
+    public function getImageUrl(): ?string
+    {
+        return $this->image_url;
+    }
+
+    public function setImageUrl(?string $image_url): static
+    {
+        $this->image_url = $image_url;
+
+        return $this;
+    }
+
+    public function getVideoUrl(): ?string
+    {
+        return $this->video_url;
+    }
+
+    public function setVideoUrl(?string $video_url): static
+    {
+        $this->video_url = $video_url;
+
+        return $this;
+    }
+
+    public function getInstructions(): ?string
+    {
+        return $this->instructions;
+    }
+
+    public function setInstructions(?string $instructions): static
+    {
+        $this->instructions = $instructions;
 
         return $this;
     }
@@ -132,7 +175,7 @@ class TrainingExercises
     {
         if (!$this->workoutLogDetails->contains($workoutLogDetail)) {
             $this->workoutLogDetails->add($workoutLogDetail);
-            $workoutLogDetail->setExerciseId($this);
+            $workoutLogDetail->setExercise($this);
         }
 
         return $this;
@@ -142,8 +185,8 @@ class TrainingExercises
     {
         if ($this->workoutLogDetails->removeElement($workoutLogDetail)) {
             // set the owning side to null (unless already changed)
-            if ($workoutLogDetail->getExerciseId() === $this) {
-                $workoutLogDetail->setExerciseId(null);
+            if ($workoutLogDetail->getExercise() === $this) {
+                $workoutLogDetail->setExercise(null);
             }
         }
 
