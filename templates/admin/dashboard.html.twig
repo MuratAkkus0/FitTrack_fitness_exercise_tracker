@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Yönetici Paneli
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-8">
+		<div class="max-w-7xl mx-auto">
+			<h1 class="text-3xl font-bold text-gray-800 mb-6">Yönetici Paneli</h1>
+
+			{% for label, messages in app.flashes %}
+				{% for message in messages %}
+					<div class="mb-4 p-4 rounded-md {{ label == 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+						{{ message }}
+					</div>
+				{% endfor %}
+			{% endfor %}
+
+			<div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+				<div class="p-6">
+					<h2 class="text-xl font-semibold text-gray-800 mb-4">Hızlı Erişim</h2>
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+						<a href="{{ path('app_admin_users') }}" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex items-center">
+							<div class="flex-shrink-0 h-10 w-10 bg-orange-200 rounded-full flex items-center justify-center text-orange-700">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewbox="0 0 20 20" fill="currentColor">
+									<path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<h3 class="text-lg font-medium text-gray-800">Kullanıcılar</h3>
+								<p class="text-sm text-gray-500">Kullanıcıları yönet</p>
+							</div>
+						</a>
+
+						<a href="#" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex items-center">
+							<div class="flex-shrink-0 h-10 w-10 bg-orange-200 rounded-full flex items-center justify-center text-orange-700">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewbox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<h3 class="text-lg font-medium text-gray-800">Egzersizler</h3>
+								<p class="text-sm text-gray-500">Egzersizleri yönet</p>
+							</div>
+						</a>
+
+						<a href="#" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex items-center">
+							<div class="flex-shrink-0 h-10 w-10 bg-orange-200 rounded-full flex items-center justify-center text-orange-700">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewbox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+								</svg>
+							</div>
+							<div class="ml-4">
+								<h3 class="text-lg font-medium text-gray-800">Sistem Ayarları</h3>
+								<p class="text-sm text-gray-500">Sistem ayarlarını düzenle</p>
+							</div>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="bg-white rounded-lg shadow-md overflow-hidden">
+				<div class="p-6">
+					<h2 class="text-xl font-semibold text-gray-800 mb-4">Sistem Özeti</h2>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						<div class="bg-orange-50 rounded-lg p-4">
+							<h3 class="text-lg font-medium text-gray-800">Toplam Kullanıcı</h3>
+							<p class="text-3xl font-bold text-orange-600">{{ users_count ?? '0' }}</p>
+						</div>
+
+						<div class="bg-blue-50 rounded-lg p-4">
+							<h3 class="text-lg font-medium text-gray-800">Toplam Egzersiz</h3>
+							<p class="text-3xl font-bold text-blue-600">{{ exercises_count ?? '0' }}</p>
+						</div>
+
+						<div class="bg-green-50 rounded-lg p-4">
+							<h3 class="text-lg font-medium text-gray-800">Toplam Program</h3>
+							<p class="text-3xl font-bold text-green-600">{{ programs_count ?? '0' }}</p>
+						</div>
+
+						<div class="bg-purple-50 rounded-lg p-4">
+							<h3 class="text-lg font-medium text-gray-800">Tamamlanan Antrenman</h3>
+							<p class="text-3xl font-bold text-purple-600">{{ workouts_count ?? '0' }}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
