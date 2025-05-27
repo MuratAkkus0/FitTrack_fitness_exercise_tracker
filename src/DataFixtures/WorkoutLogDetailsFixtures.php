@@ -13,17 +13,20 @@ class WorkoutLogDetailsFixtures extends Fixture implements DependentFixtureInter
 {
     public function getDependencies(): array
     {
-        return [WorkoutLogsFixtures::class];
+        return [
+            TrainingExercisesFixtures::class,
+            WorkoutLogsFixtures::class
+        ];
     }
     public function load(ObjectManager $manager): void
     {
         $workoutLogDetails = new WorkoutLogDetails();
-        $workoutLogDetails->setExerciseId($this->getReference('training_exercise_1', TrainingExercises::class));
-        $workoutLogDetails->setLogId($this->getReference('workout_log_1', WorkoutLogs::class));
+        $workoutLogDetails->setExercise($this->getReference('training_exercise_1', TrainingExercises::class));
+        $workoutLogDetails->setWorkoutLog($this->getReference('workout_log_1', WorkoutLogs::class));
         $workoutLogDetails->setNotes('was good');
         $workoutLogDetails->setReps(10);
         $workoutLogDetails->setSets(3);
-        $workoutLogDetails->setWeight(15);
+        $workoutLogDetails->setWeight('15.00');
 
         $manager->persist($workoutLogDetails);
 

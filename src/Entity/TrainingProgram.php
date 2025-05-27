@@ -6,6 +6,7 @@ use App\Repository\TrainingProgramRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TrainingProgramRepository::class)]
 class TrainingProgram
@@ -16,10 +17,32 @@ class TrainingProgram
     private ?int $id = null;
 
     #[ORM\Column(length: 45)]
+    #[Assert\NotBlank(message: 'Program adı boş olamaz')]
+    #[Assert\Length(min: 3, max: 45, minMessage: 'Program adı en az {{ limit }} karakter olmalıdır', maxMessage: 'Program adı {{ limit }} karakterden uzun olamaz')]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Assert\Range(min: 1, max: 7, notInRangeMessage: 'Haftalık antrenman sayısı {{ min }} ile {{ max }} arasında olmalıdır')]
+    private ?int $workouts_per_week = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Assert\Range(min: 15, max: 300, notInRangeMessage: 'Antrenman süresi {{ min }} ile {{ max }} dakika arasında olmalıdır')]
+    private ?int $duration_minutes = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $difficulty_level = null;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $created_at = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updated_at = null;
+
+    #[ORM\Column]
+    private ?bool $is_active = true;
 
     #[ORM\ManyToOne(inversedBy: 'training_programs')]
     private ?Users $users = null;
@@ -33,13 +56,15 @@ class TrainingProgram
     /**
      * @var Collection<int, WorkoutLogs>
      */
-    #[ORM\OneToMany(targetEntity: WorkoutLogs::class, mappedBy: 'training_program_id')]
+    #[ORM\OneToMany(targetEntity: WorkoutLogs::class, mappedBy: 'trainingProgram')]
     private Collection $workoutLogs;
 
     public function __construct()
     {
         $this->training_exercises = new ArrayCollection();
         $this->workoutLogs = new ArrayCollection();
+        $this->created_at = new \DateTimeImmutable();
+        $this->is_active = true;
     }
 
     public function getId(): ?int
@@ -47,7 +72,7 @@ class TrainingProgram
         return $this->id;
     }
 
-    public function setId(?Users $id): static
+    public function setId(int $id): static
     {
         $this->id = $id;
 
@@ -74,6 +99,78 @@ class TrainingProgram
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getWorkoutsPerWeek(): ?int
+    {
+        return $this->workouts_per_week;
+    }
+
+    public function setWorkoutsPerWeek(?int $workouts_per_week): static
+    {
+        $this->workouts_per_week = $workouts_per_week;
+
+        return $this;
+    }
+
+    public function getDurationMinutes(): ?int
+    {
+        return $this->duration_minutes;
+    }
+
+    public function setDurationMinutes(?int $duration_minutes): static
+    {
+        $this->duration_minutes = $duration_minutes;
+
+        return $this;
+    }
+
+    public function getDifficultyLevel(): ?string
+    {
+        return $this->difficulty_level;
+    }
+
+    public function setDifficultyLevel(?string $difficulty_level): static
+    {
+        $this->difficulty_level = $difficulty_level;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $created_at): static
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updated_at;
+    }
+
+    public function setUpdatedAt(?\DateTimeImmutable $updated_at): static
+    {
+        $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->is_active;
+    }
+
+    public function setIsActive(bool $is_active): static
+    {
+        $this->is_active = $is_active;
 
         return $this;
     }
@@ -126,7 +223,7 @@ class TrainingProgram
     {
         if (!$this->workoutLogs->contains($workoutLog)) {
             $this->workoutLogs->add($workoutLog);
-            $workoutLog->setTrainingProgramId($this);
+            $workoutLog->setTrainingProgram($this);
         }
 
         return $this;
@@ -136,8 +233,8 @@ class TrainingProgram
     {
         if ($this->workoutLogs->removeElement($workoutLog)) {
             // set the owning side to null (unless already changed)
-            if ($workoutLog->getTrainingProgramId() === $this) {
-                $workoutLog->setTrainingProgramId(null);
+            if ($workoutLog->getTrainingProgram() === $this) {
+                $workoutLog->setTrainingProgram(null);
             }
         }
 

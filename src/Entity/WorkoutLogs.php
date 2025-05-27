@@ -23,21 +23,30 @@ class WorkoutLogs
     private ?string $duration = null;
 
     #[ORM\Column]
-    private ?bool $is_complated = null;
+    private ?bool $is_completed = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $notes = null;
 
-    #[ORM\ManyToOne(inversedBy: 'workoutLogs')]
-    private ?Users $user_id = null;
+    #[ORM\Column(nullable: true)]
+    private ?int $estimated_calories = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $total_volume = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $total_reps = null;
 
     #[ORM\ManyToOne(inversedBy: 'workoutLogs')]
-    private ?TrainingProgram $training_program_id = null;
+    private ?Users $user = null;
+
+    #[ORM\ManyToOne(inversedBy: 'workoutLogs')]
+    private ?TrainingProgram $trainingProgram = null;
 
     /**
      * @var Collection<int, WorkoutLogDetails>
      */
-    #[ORM\OneToMany(targetEntity: WorkoutLogDetails::class, mappedBy: 'log_id')]
+    #[ORM\OneToMany(targetEntity: WorkoutLogDetails::class, mappedBy: 'workoutLog')]
     private Collection $workoutLogDetails;
 
     public function __construct()
@@ -50,7 +59,7 @@ class WorkoutLogs
         return $this->id;
     }
 
-    public function setId(string $id): static
+    public function setId(int $id): static
     {
         $this->id = $id;
 
@@ -81,14 +90,14 @@ class WorkoutLogs
         return $this;
     }
 
-    public function isComplated(): ?bool
+    public function isCompleted(): ?bool
     {
-        return $this->is_complated;
+        return $this->is_completed;
     }
 
-    public function setIsComplated(bool $is_complated): static
+    public function setIsCompleted(bool $is_completed): static
     {
-        $this->is_complated = $is_complated;
+        $this->is_completed = $is_completed;
 
         return $this;
     }
@@ -105,26 +114,26 @@ class WorkoutLogs
         return $this;
     }
 
-    public function getUserId(): ?Users
+    public function getUser(): ?Users
     {
-        return $this->user_id;
+        return $this->user;
     }
 
-    public function setUserId(?Users $user_id): static
+    public function setUser(?Users $user): static
     {
-        $this->user_id = $user_id;
+        $this->user = $user;
 
         return $this;
     }
 
-    public function getTrainingProgramId(): ?TrainingProgram
+    public function getTrainingProgram(): ?TrainingProgram
     {
-        return $this->training_program_id;
+        return $this->trainingProgram;
     }
 
-    public function setTrainingProgramId(?TrainingProgram $training_program_id): static
+    public function setTrainingProgram(?TrainingProgram $trainingProgram): static
     {
-        $this->training_program_id = $training_program_id;
+        $this->trainingProgram = $trainingProgram;
 
         return $this;
     }
@@ -141,7 +150,7 @@ class WorkoutLogs
     {
         if (!$this->workoutLogDetails->contains($workoutLogDetail)) {
             $this->workoutLogDetails->add($workoutLogDetail);
-            $workoutLogDetail->setLogId($this);
+            $workoutLogDetail->setWorkoutLog($this);
         }
 
         return $this;
@@ -151,10 +160,46 @@ class WorkoutLogs
     {
         if ($this->workoutLogDetails->removeElement($workoutLogDetail)) {
             // set the owning side to null (unless already changed)
-            if ($workoutLogDetail->getLogId() === $this) {
-                $workoutLogDetail->setLogId(null);
+            if ($workoutLogDetail->getWorkoutLog() === $this) {
+                $workoutLogDetail->setWorkoutLog(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getEstimatedCalories(): ?int
+    {
+        return $this->estimated_calories;
+    }
+
+    public function setEstimatedCalories(?int $estimated_calories): static
+    {
+        $this->estimated_calories = $estimated_calories;
+
+        return $this;
+    }
+
+    public function getTotalVolume(): ?string
+    {
+        return $this->total_volume;
+    }
+
+    public function setTotalVolume(?string $total_volume): static
+    {
+        $this->total_volume = $total_volume;
+
+        return $this;
+    }
+
+    public function getTotalReps(): ?int
+    {
+        return $this->total_reps;
+    }
+
+    public function setTotalReps(?int $total_reps): static
+    {
+        $this->total_reps = $total_reps;
 
         return $this;
     }
