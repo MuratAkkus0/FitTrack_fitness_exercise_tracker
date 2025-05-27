@@ -1,0 +1,129 @@
+{% set status_class = program.isActive ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800' %}
+{% set status_text = program.isActive ? 'Active' : 'Inactive' %}
+
+<div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200">
+	<div
+		class="p-6">
+		<!-- Program Header -->
+		<div class="flex justify-between items-start mb-4">
+			<div class="flex-1">
+				<h4 class="text-lg font-semibold text-gray-800 mb-1">{{ program.name }}</h4>
+				{% if program.description %}
+					<p class="text-sm text-gray-600 mb-2">{{ program.description }}</p>
+				{% endif %}
+				{% if program.createdAt %}
+					<p class="text-xs text-gray-500">Oluşturulma:
+						{{ program.createdAt }}</p>
+				{% endif %}
+			</div>
+			<div class="flex items-center space-x-2">
+				{% if program.isActive %}
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+						<i class="fas fa-check-circle mr-1"></i>
+						Aktif
+					</span>
+				{% else %}
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+						<i class="fas fa-pause-circle mr-1"></i>
+						Pasif
+					</span>
+				{% endif %}
+			</div>
+		</div>
+
+		<!-- Program Stats -->
+		<div class="grid grid-cols-2 gap-4 mb-4">
+			<div class="bg-gray-50 rounded-lg p-3">
+				<div class="flex items-center">
+					<i class="fas fa-dumbbell text-indigo-600 mr-2"></i>
+					<div>
+						<p class="text-xs text-gray-500">Egzersiz Sayısı</p>
+						<p class="text-sm font-semibold text-gray-800">{{ program.exerciseCount ?? 0 }}</p>
+					</div>
+				</div>
+			</div>
+
+			{% if program.workoutsPerWeek %}
+				<div class="bg-gray-50 rounded-lg p-3">
+					<div class="flex items-center">
+						<i class="fas fa-calendar-week text-blue-600 mr-2"></i>
+						<div>
+							<p class="text-xs text-gray-500">Haftalık</p>
+							<p class="text-sm font-semibold text-gray-800">{{ program.workoutsPerWeek }}
+								gün</p>
+						</div>
+					</div>
+				</div>
+			{% endif %}
+
+			{% if program.durationMinutes %}
+				<div class="bg-gray-50 rounded-lg p-3">
+					<div class="flex items-center">
+						<i class="fas fa-clock text-orange-600 mr-2"></i>
+						<div>
+							<p class="text-xs text-gray-500">Süre</p>
+							<p class="text-sm font-semibold text-gray-800">{{ program.durationMinutes }}
+								dk</p>
+						</div>
+					</div>
+				</div>
+			{% endif %}
+
+			{% if program.difficultyLevel %}
+				<div class="bg-gray-50 rounded-lg p-3">
+					<div class="flex items-center">
+						<i class="fas fa-signal text-purple-600 mr-2"></i>
+						<div>
+							<p class="text-xs text-gray-500">Zorluk</p>
+							<p class="text-sm font-semibold text-gray-800">
+								{% if program.difficultyLevel == 'beginner' %}
+									Başlangıç
+								{% elseif program.difficultyLevel == 'intermediate' %}
+									Orta
+								{% elseif program.difficultyLevel == 'advanced' %}
+									İleri
+								{% elseif program.difficultyLevel == 'expert' %}
+									Uzman
+								{% else %}
+									{{ program.difficultyLevel|title }}
+								{% endif %}
+							</p>
+						</div>
+					</div>
+				</div>
+			{% endif %}
+		</div>
+
+		<!-- Action Buttons -->
+		<div class="flex justify-between items-center pt-4 border-t border-gray-200">
+			<div class="flex space-x-2">
+				<button data-action="click->program-management#editProgram" data-program-id="{{ program.id }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+					<i class="fas fa-edit mr-1"></i>
+					Düzenle
+				</button>
+
+				<button data-action="click->program-management#toggleProgramStatus" data-program-id="{{ program.id }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+					{% if program.isActive %}
+						<i class="fas fa-pause mr-1"></i>
+						Duraklat
+					{% else %}
+						<i class="fas fa-play mr-1"></i>
+						Aktifleştir
+					{% endif %}
+				</button>
+			</div>
+
+			<div class="flex space-x-2">
+				<a href="/workout/start/{{ program.id }}" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+					<i class="fas fa-play mr-1"></i>
+					Başlat
+				</a>
+
+				<button data-action="click->program-management#deleteProgram" data-program-id="{{ program.id }}" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+					<i class="fas fa-trash mr-1"></i>
+					Sil
+				</button>
+			</div>
+		</div>
+	</div>
+</div>

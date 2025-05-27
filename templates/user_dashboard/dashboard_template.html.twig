@@ -2,20 +2,50 @@
 
 {% block body %}
 	<div class="min-h-screen flex flex-col">
-		{{include('navbar.html.twig')}}
+		{% set active_page = active_page|default('dashboard') %}
+		{% set navItems = [
+			{'name': 'Home', 'path': path('app_home'), 'active': false},
+			{'name': 'Workouts', 'path': '#', 'active': active_page == 'workouts'},
+			{'name': 'Progress', 'path': '#', 'active': active_page == 'progress'},
+			{'name': 'Nutrition', 'path': '#', 'active': active_page == 'nutrition'},
+			{'name': 'Profile', 'path': '#', 'active': active_page == 'profile'}
+		] %}
+		{% include 'components/navbar.html.twig' with {'navItems': navItems, 'isDashboard': true} %}
 		<div class="h-12"></div>
 		<div class="flex-[1] px-4 py-8">
-			<div class="grid grid-cols-1 container mx-auto lg:grid-cols-4 gap-8">
-				{{include('user_dashboard/sidebar.html.twig')}}
+			<div
+				class="container mx-auto">
+				<!-- Mobile Sidebar -->
+				<div class="block md:hidden mb-6" data-controller="dashboard">
+					<div class="bg-white rounded-xl shadow-md p-4">
+						<button data-dashboard-target="mobileSidebarToggle" data-action="click->dashboard#toggleMobileSidebar" class="w-full flex justify-between items-center p-2 text-indigo-900 font-bold">
+							<span>Workout Menu</span>
+							<i class="fas fa-chevron-up transition-transform duration-200" data-dashboard-target="sidebarChevron"></i>
+						</button>
+						<div data-dashboard-target="mobileSidebarContent" class="mt-4">
+							{{include('user_dashboard/sidebar.html.twig', {'mobileSidebar': true})}}
+						</div>
+					</div>
+				</div>
 
-				<!-- Main Content Area -->
-				<div class="lg:col-span-3">
+				<!-- Desktop Layout -->
+				<div
+					class="flex flex-col md:flex-row gap-6">
+					<!-- Sidebar for desktop -->
+					<div class="block w-64 flex-shrink-0">
+						{{include('user_dashboard/sidebar.html.twig', {'mobileSidebar': false})}}
+					</div>
 
-					{% block dashboard_content %}{% endblock %}
+					<!-- Main Content Area -->
+					<div class="flex-1">
+						{% block dashboard_content %}{% endblock %}
+					</div>
 				</div>
 			</div>
 		</div>
 		<div class="h-12"></div>
 		{% include('footer.html.twig') %}
 	</div>
+
+
 {% endblock %}
