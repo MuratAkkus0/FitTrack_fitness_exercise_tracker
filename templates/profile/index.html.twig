@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-8">
+		<div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+			<div class="p-6">
+				<h1 class="text-2xl font-bold text-gray-800 mb-6">Profil</h1>
+
+				{% for label, messages in app.flashes %}
+					{% for message in messages %}
+						<div class="mb-4 p-4 rounded-md {{ label == 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+							{{ message }}
+						</div>
+					{% endfor %}
+				{% endfor %}
+
+				<div class="flex items-center space-x-6 mb-6">
+					<div class="w-24 h-24 relative">
+						{% if user.profileImage %}
+							<img src="{{ asset('uploads/profile_images/' ~ user.profileImage) }}" alt="Profil Fotoğrafı" class="w-full h-full rounded-full object-cover border-2 border-gray-200">
+						{% else %}
+							<div class="w-full h-full rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+								</svg>
+							</div>
+						{% endif %}
+					</div>
+					<div>
+						<h2 class="text-xl font-medium text-gray-800">{{ user.name }}
+							{{ user.surname }}</h2>
+						<p class="text-gray-600">{{ user.email }}</p>
+					</div>
+				</div>
+
+				<div class="border-t border-gray-200 pt-4">
+					<h3 class="text-lg font-medium text-gray-800 mb-3">Profil Bilgileri</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<p class="text-sm text-gray-500">Ad</p>
+							<p class="font-medium">{{ user.name }}</p>
+						</div>
+						<div>
+							<p class="text-sm text-gray-500">Soyad</p>
+							<p class="font-medium">{{ user.surname }}</p>
+						</div>
+						<div>
+							<p class="text-sm text-gray-500">E-posta</p>
+							<p class="font-medium">{{ user.email }}</p>
+						</div>
+						<div>
+							<p class="text-sm text-gray-500">Kullanıcı Rolü</p>
+							<p class="font-medium">
+								{% if 'ROLE_ADMIN' in user.roles %}
+									Yönetici
+								{% else %}
+									Kullanıcı
+								{% endif %}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-6">
+					<a href="{{ path('app_profile_edit') }}" class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700 active:bg-orange-800 focus:outline-none focus:border-orange-800 focus:ring focus:ring-orange-300 disabled:opacity-25 transition">
+						Profili Düzenle
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
