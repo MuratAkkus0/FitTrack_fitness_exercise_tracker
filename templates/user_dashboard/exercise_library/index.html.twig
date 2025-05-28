@@ -1,7 +1,6 @@
 {% extends 'user_dashboard/dashboard_template.html.twig' %}
 
 {% block dashboard_content %}
-
 	<div data-controller="exercise-library" data-exercise-library-exercises-url-value="{{ path('app_exercises_api') }}" data-exercise-library-user-programs-url-value="{{ path('app_programs_api') }}" class="bg-white rounded-xl shadow-md p-6">
 		<div class="flex justify-between items-center mb-6">
 			<h3 class="text-xl font-bold text-indigo-900">Exercise Library</h3>
@@ -10,11 +9,7 @@
 					<input type="text" data-exercise-library-target="searchInput" data-action="input->exercise-library#search" placeholder="Search exercises..." value="{{ currentSearch ?? '' }}" class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
 					<i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
 				</div>
-				<a href="{{ path('app_exercises_favorites') }}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
-					<i class="fas fa-heart mr-2"></i>
-					Favorites
-				</a>
-				<button data-action="click->exercise-library#openAddExerciseModal" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
+				<button onclick="openExerciseModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
 					<i class="fas fa-plus mr-2"></i>
 					Add Exercise
 				</button>
@@ -72,12 +67,11 @@
 									<i class="fas fa-eye mr-1"></i>
 									View
 								</a>
-								<button data-action="click->exercise-library#toggleFavorite" data-exercise-id="{{ exercise.id }}" class="favorite-btn {{ exercise.id in favoriteExerciseIds ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-600' }} py-2 px-3 rounded-lg transition text-sm">
-									<i class="fas fa-heart"></i>
+								<button data-action="click->exercise-library#openAddToProgramModal" data-exercise-id="{{ exercise.id }}" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 rounded-lg transition text-sm">
+									<i class="fas fa-plus"></i>
 								</button>
-								<button data-action="click->exercise-library#openAddToProgramModal" data-exercise-id="{{ exercise.id }}" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition text-sm">
-									<i class="fas fa-plus mr-1"></i>
-									Add
+								<button data-action="click->exercise-library#deleteExercise" data-exercise-id="{{ exercise.id }}" data-exercise-name="{{ exercise.name }}" class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg transition text-sm" title="Delete Exercise">
+									<i class="fas fa-trash"></i>
 								</button>
 							</div>
 						</div>
@@ -91,98 +85,98 @@
 				</div>
 			{% endif %}
 		</div>
-	</div>
 
-	<!-- Add Exercise Modal -->
-	<div data-exercise-library-target="addExerciseModal" class="fixed inset-0 hidden overflow-y-auto h-full w-full z-50">
-		<div class="fixed inset-0 bg-[rgba(0,0,0,0.5)] transition-all duration-300"></div>
-		<div data-exercise-library-target="addExerciseModalContent" class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white transform transition-all duration-300 scale-95 opacity-0">
-			<div class="mt-3">
-				<div class="flex justify-between items-center mb-4">
-					<h3 class="text-lg font-bold text-indigo-900">Add New Exercise</h3>
-					<button data-action="click->exercise-library#closeAddExerciseModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
-						<i class="fas fa-times"></i>
-					</button>
+		<!-- Add Exercise Modal -->
+		<div data-exercise-library-target="addExerciseModal" class="fixed inset-0 hidden h-full w-full z-[9999]" style="display: none; align-items: center; justify-content: center;">
+			<div class="fixed inset-0 backdrop-blur-sm transition-all duration-300" style="background-color: rgba(0, 0, 0, 0.1) !important;"></div>
+			<div data-exercise-library-target="addExerciseModalContent" class="relative p-5 border w-full max-w-lg shadow-lg rounded-md bg-white z-[10000]" style="transform: scale(0.95); opacity: 0; transition: all 0.3s ease;">
+				<div class="mt-3">
+					<div class="flex justify-between items-center mb-4">
+						<h3 class="text-lg font-bold text-indigo-900">Add New Exercise</h3>
+						<button onclick="closeExerciseModal()" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+							<i class="fas fa-times"></i>
+						</button>
+					</div>
+
+					<form data-exercise-library-target="addExerciseForm" data-action="submit->exercise-library#submitForm" class="space-y-4">
+						<div>
+							<label for="exerciseName" class="block text-sm font-medium text-gray-700 mb-1">Exercise Name *</label>
+							<input type="text" id="exerciseName" name="exerciseName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="e.g., Bench Press">
+						</div>
+
+						<div>
+							<label for="exerciseDescription" class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+							<textarea id="exerciseDescription" name="exerciseDescription" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="Describe how to perform this exercise..."></textarea>
+						</div>
+
+						<div>
+							<label for="exerciseMuscleGroup" class="block text-sm font-medium text-gray-700 mb-1">Muscle Group *</label>
+							<select id="exerciseMuscleGroup" name="exerciseMuscleGroup" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+								<option value="">Select muscle group</option>
+								{% if muscleGroups is defined %}
+									{% for muscleGroup in muscleGroups %}
+										<option value="{{ muscleGroup.value }}">{{ muscleGroup.getLabel() }}</option>
+									{% endfor %}
+								{% endif %}
+							</select>
+						</div>
+
+						<div>
+							<label for="exerciseImageUrl" class="block text-sm font-medium text-gray-700 mb-1">Image URL (Optional)</label>
+							<input type="url" id="exerciseImageUrl" name="exerciseImageUrl" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="https://example.com/exercise-image.jpg">
+						</div>
+
+						<div>
+							<label for="exerciseVideoUrl" class="block text-sm font-medium text-gray-700 mb-1">Video URL (Optional)</label>
+							<input type="url" id="exerciseVideoUrl" name="exerciseVideoUrl" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="https://youtube.com/watch?v=...">
+						</div>
+
+						<div>
+							<label for="exerciseInstructions" class="block text-sm font-medium text-gray-700 mb-1">Instructions (Optional)</label>
+							<textarea id="exerciseInstructions" name="exerciseInstructions" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="Step-by-step instructions for performing this exercise..."></textarea>
+						</div>
+
+						<div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+							<button type="button" onclick="closeExerciseModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200">
+								Cancel
+							</button>
+							<button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-200">
+								Add Exercise
+							</button>
+						</div>
+					</form>
 				</div>
-
-				<form data-exercise-library-target="addExerciseForm" data-action="submit->exercise-library#submitForm" class="space-y-4">
-					<div>
-						<label for="exerciseName" class="block text-sm font-medium text-gray-700 mb-1">Exercise Name *</label>
-						<input type="text" id="exerciseName" name="exerciseName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="e.g., Bench Press">
-					</div>
-
-					<div>
-						<label for="exerciseDescription" class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-						<textarea id="exerciseDescription" name="exerciseDescription" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="Describe how to perform this exercise..."></textarea>
-					</div>
-
-					<div>
-						<label for="exerciseMuscleGroup" class="block text-sm font-medium text-gray-700 mb-1">Muscle Group *</label>
-						<select id="exerciseMuscleGroup" name="exerciseMuscleGroup" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
-							<option value="">Select muscle group</option>
-							{% if muscleGroups is defined %}
-								{% for muscleGroup in muscleGroups %}
-									<option value="{{ muscleGroup.value }}">{{ muscleGroup.getLabel() }}</option>
-								{% endfor %}
-							{% endif %}
-						</select>
-					</div>
-
-					<div>
-						<label for="exerciseImageUrl" class="block text-sm font-medium text-gray-700 mb-1">Image URL (Optional)</label>
-						<input type="url" id="exerciseImageUrl" name="exerciseImageUrl" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="https://example.com/exercise-image.jpg">
-					</div>
-
-					<div>
-						<label for="exerciseVideoUrl" class="block text-sm font-medium text-gray-700 mb-1">Video URL (Optional)</label>
-						<input type="url" id="exerciseVideoUrl" name="exerciseVideoUrl" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="https://youtube.com/watch?v=...">
-					</div>
-
-					<div>
-						<label for="exerciseInstructions" class="block text-sm font-medium text-gray-700 mb-1">Instructions (Optional)</label>
-						<textarea id="exerciseInstructions" name="exerciseInstructions" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" placeholder="Step-by-step instructions for performing this exercise..."></textarea>
-					</div>
-
-					<div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-						<button type="button" data-action="click->exercise-library#closeAddExerciseModal" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200">
-							Cancel
-						</button>
-						<button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-200">
-							Add Exercise
-						</button>
-					</div>
-				</form>
 			</div>
 		</div>
-	</div>
 
-	<!-- Add to Program Modal -->
-	<div data-exercise-library-target="addToProgramModal" class="fixed inset-0 hidden overflow-y-auto h-full w-full z-50">
-		<div class="fixed inset-0 bg-[rgba(0,0,0,0.5)] transition-all duration-300"></div>
-		<div data-exercise-library-target="addToProgramModalContent" class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white transform transition-all duration-300 scale-95 opacity-0">
-			<div class="mt-3">
-				<div class="flex justify-between items-center mb-4">
-					<h3 class="text-lg font-bold text-indigo-900">Add to Program</h3>
-					<button data-action="click->exercise-library#closeAddToProgramModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
-						<i class="fas fa-times"></i>
-					</button>
-				</div>
-
-				<div class="space-y-4">
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">Select Program</label>
-						<div data-exercise-library-target="programsList" class="space-y-2 max-h-60 overflow-y-auto">
-							<div class="text-center text-gray-500 py-4">Loading programs...</div>
-						</div>
+		<!-- Add to Program Modal -->
+		<div data-exercise-library-target="addToProgramModal" class="fixed inset-0 hidden h-full w-full z-[9999]" style="display: none; align-items: center; justify-content: center;">
+			<div class="fixed inset-0 backdrop-blur-sm transition-all duration-300" style="background-color: rgba(0, 0, 0, 0.1) !important;"></div>
+			<div data-exercise-library-target="addToProgramModalContent" class="relative p-5 border w-full max-w-lg shadow-lg rounded-md bg-white z-[10000]" style="transform: scale(0.95); opacity: 0; transition: all 0.3s ease;">
+				<div class="mt-3">
+					<div class="flex justify-between items-center mb-4">
+						<h3 class="text-lg font-bold text-indigo-900">Add to Program</h3>
+						<button data-action="click->exercise-library#closeAddToProgramModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+							<i class="fas fa-times"></i>
+						</button>
 					</div>
 
-					<div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-						<button type="button" data-action="click->exercise-library#closeAddToProgramModal" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200">
-							Cancel
-						</button>
-						<button type="button" data-exercise-library-target="confirmAddToProgramBtn" data-action="click->exercise-library#confirmAddToProgram" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-200" disabled>
-							Add to Program
-						</button>
+					<div class="space-y-4">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2">Select Program</label>
+							<div data-exercise-library-target="programsList" class="space-y-2 max-h-60 overflow-y-auto">
+								<div class="text-center text-gray-500 py-4">Loading programs...</div>
+							</div>
+						</div>
+
+						<div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+							<button type="button" data-action="click->exercise-library#closeAddToProgramModal" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200">
+								Cancel
+							</button>
+							<button type="button" data-exercise-library-target="confirmAddToProgramBtn" data-action="click->exercise-library#confirmAddToProgram" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-200" disabled>
+								Add to Program
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -205,23 +199,74 @@
 			overflow: hidden;
 		}
 
-		[data-exercise-library-target="addExerciseModal"].active {
-			display: block !important;
+		/* Modal Base Styles */
+		[data-exercise-library-target="addExerciseModal"],
+		[data-exercise-library-target="addToProgramModal"] {
+			z-index: 9999;
 		}
 
-		[data-exercise-library-target="addExerciseModal"].active [data-exercise-library-target="addExerciseModalContent"] {
-			transform: scale(1) !important;
-			opacity: 1 !important;
+		[data-exercise-library-target="addExerciseModalContent"],
+		[data-exercise-library-target="addToProgramModalContent"] {
+			z-index: 10000;
+			max-height: 90vh;
+			overflow-y: auto;
 		}
 
-		[data-exercise-library-target="addToProgramModal"].active {
-			display: block !important;
+		/* Program selection styles */
+		.program-item.selected {
+			@apply border-orange-500 bg-orange-50;
 		}
 
-		[data-exercise-library-target="addToProgramModal"].active [data-exercise-library-target="addToProgramModalContent"] {
-			transform: scale(1) !important;
-			opacity: 1 !important;
+		.program-item:hover {
+			@apply border-gray-300 bg-gray-50;
+		}
+
+		.program-item.selected:hover {
+			@apply border-orange-500 bg-orange-50;
 		}
 	</style>
+
+	<script>
+		function openExerciseModal() {
+console.log("Opening exercise modal...");
+const modal = document.querySelector('[data-exercise-library-target="addExerciseModal"]');
+const modalContent = document.querySelector('[data-exercise-library-target="addExerciseModalContent"]');
+
+if (modal && modalContent) {
+console.log("Modal elements found");
+modal.style.display = "flex";
+modal.classList.remove("hidden");
+
+// Force reflow
+modal.offsetHeight;
+
+// Animate in
+modalContent.style.transform = "scale(1)";
+modalContent.style.opacity = "1";
+
+document.body.style.overflow = "hidden";
+console.log("Modal should be visible now");
+} else {
+console.error("Modal elements not found!");
+}
+}
+
+function closeExerciseModal() {
+console.log("Closing exercise modal...");
+const modal = document.querySelector('[data-exercise-library-target="addExerciseModal"]');
+const modalContent = document.querySelector('[data-exercise-library-target="addExerciseModalContent"]');
+
+if (modal && modalContent) { // Animate out
+modalContent.style.transform = "scale(0.95)";
+modalContent.style.opacity = "0";
+
+setTimeout(() => {
+modal.style.display = "none";
+modal.classList.add("hidden");
+document.body.style.overflow = "";
+}, 300);
+}
+}
+	</script>
 
 {% endblock %}

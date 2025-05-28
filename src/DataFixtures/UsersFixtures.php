@@ -19,7 +19,7 @@ class UsersFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-        // Normal kullanıcı
+        // Regular user
         $user = new Users();
         $user->setName('Murat');
         $user->setSurname('Akkus');
@@ -31,7 +31,7 @@ class UsersFixtures extends Fixture
         $this->addReference('user_1', $user);
         $manager->persist($user);
 
-        // Admin kullanıcısı
+        // Admin user
         $admin = new Users();
         $admin->setName('Admin');
         $admin->setSurname('User');

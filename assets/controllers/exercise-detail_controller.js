@@ -4,7 +4,6 @@ import { Controller } from "@hotwired/stimulus";
  * Exercise Detail Controller
  * Handles exercise detail page functionality including:
  * - Adding exercises to programs
- * - Favorite toggle
  * - Modal management
  */
 export default class extends Controller {
@@ -16,18 +15,28 @@ export default class extends Controller {
     "cancelAddToProgramBtn",
     "confirmAddToProgramBtn",
     "programsList",
-    "favoriteBtn",
   ];
 
   static values = {
     exerciseId: Number,
     programsApiUrl: String,
     addToProgramUrl: String,
-    toggleFavoriteUrl: String,
   };
 
   connect() {
     console.log("🚀 Exercise Detail Controller connected");
+    console.log("Available targets:", {
+      addToProgramModal: this.hasAddToProgramModalTarget,
+      addToProgramModalContent: this.hasAddToProgramModalContentTarget,
+      addToProgramBtn: this.hasAddToProgramBtnTarget,
+      programsList: this.hasProgramsListTarget,
+      confirmAddToProgramBtn: this.hasConfirmAddToProgramBtnTarget,
+    });
+    console.log("Values:", {
+      exerciseId: this.exerciseIdValue,
+      programsApiUrl: this.programsApiUrlValue,
+      addToProgramUrl: this.addToProgramUrlValue,
+    });
     this.selectedProgramId = null;
     this.setupEventListeners();
   }
@@ -59,22 +68,71 @@ export default class extends Controller {
   // Modal functions
   openAddToProgramModal() {
     console.log("🔓 Opening add to program modal...");
-    if (!this.hasAddToProgramModalTarget) return;
+    console.log("hasAddToProgramModalTarget:", this.hasAddToProgramModalTarget);
+    console.log("All targets check:", {
+      modal: this.hasAddToProgramModalTarget,
+      content: this.hasAddToProgramModalContentTarget,
+      btn: this.hasAddToProgramBtnTarget,
+      list: this.hasProgramsListTarget,
+    });
 
+    if (this.hasAddToProgramModalTarget) {
+      console.log("✅ Modal target found!");
+      console.log("Modal element:", this.addToProgramModalTarget);
+    } else {
+      console.error("❌ Modal target NOT found!");
+      console.log(
+        "Looking for element with selector: [data-exercise-detail-target='addToProgramModal']"
+      );
+      const manualFind = document.querySelector(
+        "[data-exercise-detail-target='addToProgramModal']"
+      );
+      console.log("Manual search result:", manualFind);
+      return;
+    }
+
+    console.log(
+      "Modal classes before:",
+      this.addToProgramModalTarget.className
+    );
+
+    // Show modal immediately
+    this.addToProgramModalTarget.style.display = "flex";
     this.addToProgramModalTarget.classList.remove("hidden");
-    // Force a reflow
-    void this.addToProgramModalTarget.offsetWidth;
-    this.addToProgramModalTarget.classList.add("active");
+    console.log("✅ Set display to flex and removed hidden class");
+
+    // Force reflow
+    this.addToProgramModalTarget.offsetHeight;
+    console.log("✅ Forced reflow");
+
+    // Animate in
+    if (this.hasAddToProgramModalContentTarget) {
+      this.addToProgramModalContentTarget.style.transform = "scale(1)";
+      this.addToProgramModalContentTarget.style.opacity = "1";
+      console.log("✅ Applied animation styles");
+    } else {
+      console.error("❌ Modal content target not found!");
+    }
+
     document.body.style.overflow = "hidden";
+    console.log("✅ Set body overflow to hidden");
+
     this.loadUserPrograms();
+    console.log("✅ Called loadUserPrograms");
   }
 
   closeAddToProgramModal() {
     console.log("🔒 Closing add to program modal...");
     if (!this.hasAddToProgramModalTarget) return;
 
-    this.addToProgramModalTarget.classList.remove("active");
+    // Animate out
+    if (this.hasAddToProgramModalContentTarget) {
+      this.addToProgramModalContentTarget.style.transform = "scale(0.95)";
+      this.addToProgramModalContentTarget.style.opacity = "0";
+    }
+
     setTimeout(() => {
+      this.addToProgramModalTarget.style.display = "none";
       this.addToProgramModalTarget.classList.add("hidden");
       document.body.style.overflow = "";
       this.selectedProgramId = null;
@@ -181,7 +239,7 @@ export default class extends Controller {
     this.programsListTarget
       .querySelectorAll(".program-item")
       .forEach((item) => {
-        item.classList.remove("selected", "bg-blue-50", "border-blue-500");
+        item.classList.remove("selected", "bg-orange-50", "border-orange-500");
       });
     this.programsListTarget
       .querySelectorAll(".program-radio")
@@ -190,7 +248,7 @@ export default class extends Controller {
       });
 
     // Select this item
-    programItem.classList.add("selected", "bg-blue-50", "border-blue-500");
+    programItem.classList.add("selected", "bg-orange-50", "border-orange-500");
     programItem.querySelector(".program-radio").checked = true;
     this.selectedProgramId = programId;
 
@@ -254,73 +312,6 @@ export default class extends Controller {
     }
   }
 
-  // Toggle favorite
-  async toggleFavorite() {
-    console.log("❤️ Toggle favorite for exercise:", this.exerciseIdValue);
-
-    if (!this.hasFavoriteBtnTarget) return;
-
-    try {
-      this.favoriteBtnTarget.disabled = true;
-      const originalText = this.favoriteBtnTarget.innerHTML;
-      this.favoriteBtnTarget.innerHTML =
-        '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
-
-      const response = await fetch(this.toggleFavoriteUrlValue, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        if (result.isFavorite) {
-          this.favoriteBtnTarget.innerHTML =
-            '<i class="fas fa-heart mr-2"></i>Favorite';
-          this.favoriteBtnTarget.classList.remove(
-            "bg-gray-100",
-            "text-gray-700",
-            "hover:bg-gray-200"
-          );
-          this.favoriteBtnTarget.classList.add(
-            "bg-red-500",
-            "text-white",
-            "hover:bg-red-600"
-          );
-        } else {
-          this.favoriteBtnTarget.innerHTML =
-            '<i class="fas fa-heart mr-2"></i>Favorite';
-          this.favoriteBtnTarget.classList.remove(
-            "bg-red-500",
-            "text-white",
-            "hover:bg-red-600"
-          );
-          this.favoriteBtnTarget.classList.add(
-            "bg-gray-100",
-            "text-gray-700",
-            "hover:bg-gray-200"
-          );
-        }
-        this.showToast(result.message, "success");
-      } else {
-        this.showToast(
-          result.message || "Favori durumu değiştirilemedi.",
-          "error"
-        );
-        this.favoriteBtnTarget.innerHTML = originalText;
-      }
-    } catch (error) {
-      console.error("❌ Favorite toggle error:", error);
-      this.showToast("Bağlantı hatası oluştu. Lütfen tekrar deneyin.", "error");
-      this.favoriteBtnTarget.innerHTML = originalText;
-    } finally {
-      this.favoriteBtnTarget.disabled = false;
-    }
-  }
-
   // Toast notification function
   showToast(message, type = "info") {
     const toast = document.createElement("div");
@@ -358,5 +349,47 @@ export default class extends Controller {
         }
       }, 300);
     }, 3000);
+  }
+
+  // Delete Exercise
+  async deleteExercise(event) {
+    const exerciseId = event.currentTarget.dataset.exerciseId;
+    const exerciseName =
+      event.currentTarget.dataset.exerciseName || "This exercise";
+
+    if (
+      !confirm(
+        `Are you sure you want to delete ${exerciseName}? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/dashboard/exercise-library/delete/${exerciseId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        this.showToast(data.message, "success");
+        // Redirect to exercise library after successful deletion
+        setTimeout(() => {
+          window.location.href = "/dashboard/exercise-library";
+        }, 1500);
+      } else {
+        this.showToast(data.message || "Could not delete exercise", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting exercise:", error);
+      this.showToast("An error occurred while deleting the exercise", "error");
+    }
   }
 }

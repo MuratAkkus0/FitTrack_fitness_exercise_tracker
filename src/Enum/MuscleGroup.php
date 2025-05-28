@@ -19,11 +19,11 @@ enum MuscleGroup: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::CHEST => 'Göğüs',
-            self::BACK => 'Sırt',
-            self::LEGS => 'Bacak',
-            self::SHOULDERS => 'Omuz',
-            self::ARMS => 'Kol',
+            self::CHEST => 'Chest',
+            self::BACK => 'Back',
+            self::LEGS => 'Legs',
+            self::SHOULDERS => 'Shoulders',
+            self::ARMS => 'Arms',
             self::CORE => 'Core',
         };
     }

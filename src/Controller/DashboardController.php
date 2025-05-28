@@ -20,21 +20,21 @@ class DashboardController extends AbstractController
   {
     $user = $this->getUser();
 
-    // Kullanıcının aktif programları
+    // User's active programs
     $activePrograms = $entityManager->getRepository(TrainingProgram::class)->findBy(
       ['users' => $user, 'is_active' => true],
       ['created_at' => 'DESC'],
       5
     );
 
-    // Son antrenmanlar
+    // Recent workouts
     $recentWorkouts = $entityManager->getRepository(WorkoutLogs::class)->findBy(
       ['user' => $user],
       ['created_at' => 'DESC'],
       5
     );
 
-    // Bu haftaki antrenmanlar
+    // This week's workouts
     $weekStart = new \DateTime('monday this week');
     $weekEnd = new \DateTime('sunday this week 23:59:59');
 
@@ -49,14 +49,14 @@ class DashboardController extends AbstractController
       ->getQuery()
       ->getResult();
 
-    // Aktif hedefler
+    // Active goals
     $activeGoals = $entityManager->getRepository(FitnessGoal::class)->findBy(
       ['user' => $user, 'is_active' => true, 'is_completed' => false],
       ['created_at' => 'DESC'],
       3
     );
 
-    // İstatistikler
+    // Statistics
     $totalWorkouts = $entityManager->getRepository(WorkoutLogs::class)->count(['user' => $user]);
     $totalPrograms = $entityManager->getRepository(TrainingProgram::class)->count(['users' => $user]);
     $completedGoals = $entityManager->getRepository(FitnessGoal::class)->count([
@@ -64,7 +64,7 @@ class DashboardController extends AbstractController
       'is_completed' => true
     ]);
 
-    // Bu ayın antrenman sayısı
+    // This month's workout count
     $monthStart = new \DateTime('first day of this month');
     $monthEnd = new \DateTime('last day of this month 23:59:59');
 

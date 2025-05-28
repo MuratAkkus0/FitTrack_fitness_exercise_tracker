@@ -25,7 +25,7 @@ class WorkoutController extends AbstractController
         $program = $entityManager->getRepository(TrainingProgram::class)->find($programId);
 
         if (!$program || $program->getUsers() !== $user) {
-            throw $this->createNotFoundException('Program bulunamadı veya erişim yetkiniz yok.');
+            throw $this->createNotFoundException('Program not found or you do not have access.');
         }
 
         return $this->render('user_dashboard/workout/start.html.twig', [
@@ -41,17 +41,17 @@ class WorkoutController extends AbstractController
             $data = json_decode($request->getContent(), true);
             $user = $this->getUser();
 
-            // Validasyon
+            // Validation
             if (empty($data['programId'])) {
-                return $this->json(['success' => false, 'message' => 'Program ID gerekli'], 400);
+                return $this->json(['success' => false, 'message' => 'Program ID is required'], 400);
             }
 
             $program = $entityManager->getRepository(TrainingProgram::class)->find($data['programId']);
             if (!$program || $program->getUsers() !== $user) {
-                return $this->json(['success' => false, 'message' => 'Program bulunamadı'], 404);
+                return $this->json(['success' => false, 'message' => 'Program not found'], 404);
             }
 
-            // Workout Log oluştur
+            // Create Workout Log
             $workoutLog = new WorkoutLogs();
             $workoutLog->setUser($user);
             $workoutLog->setTrainingProgram($program);
@@ -65,7 +65,7 @@ class WorkoutController extends AbstractController
 
             $entityManager->persist($workoutLog);
 
-            // Egzersiz detaylarını kaydet
+            // Save exercise details
             if (isset($data['exercises']) && is_array($data['exercises'])) {
                 foreach ($data['exercises'] as $exerciseData) {
                     $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseData['exerciseId']);
@@ -87,13 +87,13 @@ class WorkoutController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Antrenman başarıyla kaydedildi',
+                'message' => 'Workout saved successfully',
                 'workoutId' => $workoutLog->getId()
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Antrenman kaydedilirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while saving the workout: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -106,7 +106,7 @@ class WorkoutController extends AbstractController
         $workouts = $entityManager->getRepository(WorkoutLogs::class)->findBy(
             ['user' => $user],
             ['created_at' => 'DESC'],
-            20 // Son 20 antrenman
+            20 // Last 20 workouts
         );
 
         $formattedWorkouts = [];
@@ -137,7 +137,7 @@ class WorkoutController extends AbstractController
         $workout = $entityManager->getRepository(WorkoutLogs::class)->find($id);
 
         if (!$workout || $workout->getUser() !== $user) {
-            throw $this->createNotFoundException('Antrenman bulunamadı veya erişim yetkiniz yok.');
+            throw $this->createNotFoundException('Workout not found or you do not have access.');
         }
 
         $exerciseDetails = [];
@@ -162,7 +162,7 @@ class WorkoutController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Bugünün antrenmanlarını getir
+        // Get today's workouts
         $today = new \DateTime('today');
         $tomorrow = new \DateTime('tomorrow');
 
@@ -177,7 +177,7 @@ class WorkoutController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        // Kullanıcının aktif programlarını getir
+        // Get user's active programs
         $activePrograms = $entityManager->getRepository(TrainingProgram::class)->findBy(
             ['users' => $user, 'is_active' => true]
         );

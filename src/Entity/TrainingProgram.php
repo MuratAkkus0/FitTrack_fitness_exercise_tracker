@@ -17,19 +17,19 @@ class TrainingProgram
     private ?int $id = null;
 
     #[ORM\Column(length: 45)]
-    #[Assert\NotBlank(message: 'Program adı boş olamaz')]
-    #[Assert\Length(min: 3, max: 45, minMessage: 'Program adı en az {{ limit }} karakter olmalıdır', maxMessage: 'Program adı {{ limit }} karakterden uzun olamaz')]
+    #[Assert\NotBlank(message: 'Program name cannot be empty')]
+    #[Assert\Length(min: 3, max: 45, minMessage: 'Program name must be at least {{ limit }} characters', maxMessage: 'Program name cannot be longer than {{ limit }} characters')]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(nullable: true)]
-    #[Assert\Range(min: 1, max: 7, notInRangeMessage: 'Haftalık antrenman sayısı {{ min }} ile {{ max }} arasında olmalıdır')]
+    #[Assert\Range(min: 1, max: 7, notInRangeMessage: 'Weekly workout count must be between {{ min }} and {{ max }}')]
     private ?int $workouts_per_week = null;
 
     #[ORM\Column(nullable: true)]
-    #[Assert\Range(min: 15, max: 300, notInRangeMessage: 'Antrenman süresi {{ min }} ile {{ max }} dakika arasında olmalıdır')]
+    #[Assert\Range(min: 15, max: 300, notInRangeMessage: 'Workout duration must be between {{ min }} and {{ max }} minutes')]
     private ?int $duration_minutes = null;
 
     #[ORM\Column(length: 20, nullable: true)]
@@ -43,6 +43,12 @@ class TrainingProgram
 
     #[ORM\Column]
     private ?bool $is_active = true;
+
+    #[ORM\Column]
+    private ?bool $is_public = false;
+
+    #[ORM\Column(length: 10, nullable: true, unique: true)]
+    private ?string $share_code = null;
 
     #[ORM\ManyToOne(inversedBy: 'training_programs')]
     private ?Users $users = null;
@@ -65,6 +71,7 @@ class TrainingProgram
         $this->workoutLogs = new ArrayCollection();
         $this->created_at = new \DateTimeImmutable();
         $this->is_active = true;
+        $this->is_public = false;
     }
 
     public function getId(): ?int
@@ -171,6 +178,30 @@ class TrainingProgram
     public function setIsActive(bool $is_active): static
     {
         $this->is_active = $is_active;
+
+        return $this;
+    }
+
+    public function isPublic(): ?bool
+    {
+        return $this->is_public;
+    }
+
+    public function setIsPublic(bool $is_public): static
+    {
+        $this->is_public = $is_public;
+
+        return $this;
+    }
+
+    public function getShareCode(): ?string
+    {
+        return $this->share_code;
+    }
+
+    public function setShareCode(?string $share_code): static
+    {
+        $this->share_code = $share_code;
 
         return $this;
     }

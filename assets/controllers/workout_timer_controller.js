@@ -155,7 +155,7 @@ export default class extends Controller {
       return;
     }
 
-    if (!confirm("Antrenmanı kaydetmek istediğiniz emin misiniz?")) {
+    if (!confirm("Are you sure you want to save the workout?")) {
       return;
     }
 
@@ -221,7 +221,7 @@ export default class extends Controller {
     // Disable save button to prevent double submission
     this.saveButtonTarget.disabled = true;
     this.saveButtonTarget.innerHTML =
-      '<i class="fas fa-spinner fa-spin mr-2"></i>Kaydediliyor...';
+      '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
 
     fetch("/workout/save", {
       method: "POST",
@@ -234,16 +234,16 @@ export default class extends Controller {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          alert("Antrenman başarıyla kaydedildi!");
+          alert("Workout saved successfully!");
           window.location.href = "/dashboard/today";
         } else {
-          alert("Hata: " + data.message);
+          alert("Error: " + data.message);
           this.resetSaveButton();
         }
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Antrenman kaydedilirken bir hata oluştu.");
+        alert("An error occurred while saving the workout.");
         this.resetSaveButton();
       });
   }
@@ -251,7 +251,7 @@ export default class extends Controller {
   resetSaveButton() {
     this.saveButtonTarget.disabled = false;
     this.saveButtonTarget.innerHTML =
-      '<i class="fas fa-save mr-2"></i>Antrenmanı Kaydet';
+      '<i class="fas fa-save mr-2"></i>Save Workout';
   }
 
   calculateCalories(durationMinutes, totalVolume, exerciseCount) {
@@ -276,13 +276,13 @@ export default class extends Controller {
 
     if (
       confirm(
-        "Antrenmanı iptal etmek istediğiniz emin misiniz? Tüm veriler kaybolacak."
+        "Are you sure you want to cancel the workout? All data will be lost."
       )
     ) {
       // Disable button to prevent multiple clicks
       this.cancelButtonTarget.disabled = true;
       this.cancelButtonTarget.innerHTML =
-        '<i class="fas fa-spinner fa-spin mr-2"></i>İptal ediliyor...';
+        '<i class="fas fa-spinner fa-spin mr-2"></i>Canceling...';
 
       if (this.timerInterval) {
         clearInterval(this.timerInterval);

@@ -8,11 +8,9 @@ A Symfony-based web application for gym members to track their workout programs 
 - **MySQL database** integration
 - **Basic Authentication** (user registration/login)
 - **Workout logging** with exercise selection
-- **Progress tracking** and social sharing via blog posts
+- **Progress tracking** and analytics
 
 ## Key Features
-
-sa
 
 ### User System
 
@@ -26,9 +24,11 @@ sa
 - Edit/delete existing workout records
 - Monitor training progress
 
-### Social Sharing
+### Progress Analytics
 
-- Share workout logs as blog posts
+- Track workout frequency and performance
+- View progress charts and statistics
+- Set and monitor fitness goals
 
 ## Technical Stack
 

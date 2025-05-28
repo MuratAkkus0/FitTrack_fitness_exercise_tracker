@@ -64,7 +64,7 @@ class SecurityController extends AbstractController
                 $emailMessage = (new Email())
                     ->from('noreply@fittrack.com')
                     ->to($email)
-                    ->subject('Şifre Sıfırlama Talebi - FitTrack')
+                    ->subject('Password Reset Request - FitTrack')
                     ->html($this->renderView('security/reset_password_email.html.twig', [
                         'user' => $user,
                         'resetUrl' => $resetUrl
@@ -72,13 +72,13 @@ class SecurityController extends AbstractController
 
                 try {
                     $mailer->send($emailMessage);
-                    $this->addFlash('success', 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.');
+                    $this->addFlash('success', 'Password reset link has been sent to your email address.');
                 } catch (\Exception $e) {
-                    $this->addFlash('error', 'E-posta gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+                    $this->addFlash('error', 'An error occurred while sending the email. Please try again later.');
                 }
             } else {
                 // Don't reveal if email exists or not for security
-                $this->addFlash('success', 'Eğer bu e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.');
+                $this->addFlash('success', 'If this email address is registered in the system, a password reset link has been sent.');
             }
 
             return $this->redirectToRoute('app_login');
@@ -99,7 +99,7 @@ class SecurityController extends AbstractController
         $user = $entityManager->getRepository(Users::class)->findOneBy(['resetToken' => $token]);
 
         if (!$user || !$user->getResetTokenExpiresAt() || $user->getResetTokenExpiresAt() < new \DateTimeImmutable()) {
-            $this->addFlash('error', 'Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.');
+            $this->addFlash('error', 'Invalid or expired password reset link.');
             return $this->redirectToRoute('app_login');
         }
 
@@ -117,7 +117,7 @@ class SecurityController extends AbstractController
             $entityManager->persist($user);
             $entityManager->flush();
 
-            $this->addFlash('success', 'Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz.');
+            $this->addFlash('success', 'Your password has been successfully updated. You can now log in with your new password.');
             return $this->redirectToRoute('app_login');
         }
 

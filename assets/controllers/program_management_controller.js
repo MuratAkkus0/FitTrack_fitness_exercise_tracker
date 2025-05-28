@@ -275,18 +275,27 @@ export default class extends Controller {
 
     const formData = new FormData(this.formTarget);
     const programData = {
-      name: formData.get("name"),
-      description: formData.get("description"),
-      exercises: Array.from(this.selectedExercises),
+      programName: formData.get("programName"),
+      programDescription: formData.get("programDescription"),
+      workoutsPerWeek: formData.get("workoutsPerWeek")
+        ? parseInt(formData.get("workoutsPerWeek"))
+        : null,
+      workoutDuration: formData.get("workoutDuration")
+        ? parseInt(formData.get("workoutDuration"))
+        : null,
+      difficultyLevel: formData.get("difficultyLevel"),
+      selectedExercises: Array.from(this.selectedExercises).map((id) =>
+        parseInt(id)
+      ),
     };
 
     // Validation
-    if (!programData.name || programData.name.trim() === "") {
+    if (!programData.programName || programData.programName.trim() === "") {
       this.showError("Program name is required");
       return;
     }
 
-    if (programData.exercises.length === 0) {
+    if (programData.selectedExercises.length === 0) {
       this.showError("Please select at least one exercise");
       return;
     }
@@ -328,39 +337,210 @@ export default class extends Controller {
   // Delete program
   async deleteProgram(event) {
     const programId = event.currentTarget.dataset.programId;
-    const programName = event.currentTarget.dataset.programName;
 
-    if (
-      !confirm(
-        `Are you sure you want to delete "${programName}"? This action cannot be undone.`
-      )
-    ) {
-      return;
+    if (confirm("Are you sure you want to delete this program?")) {
+      try {
+        const response = await fetch(
+          `/dashboard/my-programs/${programId}/delete`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showMessage(result.message, "success");
+          // Reload page
+          window.location.reload();
+        } else {
+          this.showMessage(result.message, "error");
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
+        this.showMessage(
+          "An error occurred while deleting the program",
+          "error"
+        );
+      }
     }
+  }
+
+  async shareProgram(event) {
+    const programId = event.currentTarget.dataset.programId;
 
     try {
-      const response = await fetch(`/dashboard/my-programs/${programId}`, {
-        method: "DELETE",
+      const response = await fetch(
+        `/dashboard/my-programs/${programId}/share`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.showMessage(result.message, "success");
+
+        // Show share URL
+        if (result.shareUrl) {
+          const shareMessage = `Program share link: ${result.shareUrl}`;
+          navigator.clipboard
+            .writeText(result.shareUrl)
+            .then(() => {
+              this.showMessage("Share link copied to clipboard!", "success");
+            })
+            .catch(() => {
+              alert(shareMessage);
+            });
+        }
+
+        // Reload page
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        this.showMessage(result.message, "error");
+      }
+    } catch (error) {
+      console.error("Share error:", error);
+      this.showMessage("An error occurred while sharing the program", "error");
+    }
+  }
+
+  async unshareProgram(event) {
+    const programId = event.currentTarget.dataset.programId;
+
+    if (confirm("Are you sure you want to remove sharing for this program?")) {
+      try {
+        const response = await fetch(
+          `/dashboard/my-programs/${programId}/unshare`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.showMessage(result.message, "success");
+          // Reload page
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          this.showMessage(result.message, "error");
+        }
+      } catch (error) {
+        console.error("Unshare error:", error);
+        this.showMessage("An error occurred while removing sharing", "error");
+      }
+    }
+  }
+
+  // Edit program
+  async editProgram(event) {
+    const programId = event.currentTarget.dataset.programId;
+
+    try {
+      // Fetch program data
+      const response = await fetch(`/dashboard/my-programs/${programId}/edit`, {
+        method: "GET",
         headers: {
-          "X-Requested-With": "XMLHttpRequest",
+          "Content-Type": "application/json",
         },
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (data.success) {
-        this.showSuccess("Program deleted successfully!");
-        // Remove the program card from DOM
-        const programCard = event.currentTarget.closest(".program-card");
-        if (programCard) {
-          programCard.remove();
+      if (result.success && result.program) {
+        this.isEditMode = true;
+        this.currentProgramId = programId;
+
+        if (this.hasModalTitleTarget) {
+          this.modalTitleTarget.textContent = "Edit Program";
         }
+        if (this.hasSubmitBtnTarget) {
+          this.submitBtnTarget.textContent = "Update Program";
+        }
+
+        // Fill form with existing data
+        if (this.hasFormTarget) {
+          const nameInput = this.formTarget.querySelector("#programName");
+          const descriptionInput = this.formTarget.querySelector(
+            "#programDescription"
+          );
+          const workoutsPerWeekSelect =
+            this.formTarget.querySelector("#workoutsPerWeek");
+          const durationInput =
+            this.formTarget.querySelector("#workoutDuration");
+          const difficultySelect =
+            this.formTarget.querySelector("#difficultyLevel");
+
+          if (nameInput) nameInput.value = result.program.name || "";
+          if (descriptionInput)
+            descriptionInput.value = result.program.description || "";
+          if (workoutsPerWeekSelect)
+            workoutsPerWeekSelect.value = result.program.workoutsPerWeek || "";
+          if (durationInput)
+            durationInput.value = result.program.durationMinutes || "";
+          if (difficultySelect)
+            difficultySelect.value = result.program.difficultyLevel || "";
+        }
+
+        // Set selected exercises
+        this.selectedExercises.clear();
+        if (result.program.selectedExercises) {
+          result.program.selectedExercises.forEach((exerciseId) => {
+            this.selectedExercises.add(exerciseId.toString());
+          });
+        }
+
+        this.updateSelectedExercisesCount();
+        this.openModal();
       } else {
-        this.showError(data.message || "Error deleting program");
+        this.showError(result.message || "Could not load program information");
       }
     } catch (error) {
-      console.error("Error deleting program:", error);
-      this.showError("Error deleting program");
+      console.error("Edit program error:", error);
+      this.showError("An error occurred while editing the program");
+    }
+  }
+
+  async toggleProgramStatus(event) {
+    const programId = event.currentTarget.dataset.programId;
+
+    try {
+      const response = await fetch(
+        `/dashboard/my-programs/${programId}/toggle-status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        this.showMessage(result.message, "success");
+        // Reload page
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        this.showMessage(result.message, "error");
+      }
+    } catch (error) {
+      console.error("Toggle status error:", error);
+      this.showMessage(
+        "An error occurred while changing program status",
+        "error"
+      );
     }
   }
 
@@ -372,6 +552,11 @@ export default class extends Controller {
 
   showError(message) {
     // You can implement a toast notification system here
+    alert(message); // Temporary solution
+  }
+
+  showMessage(message, type) {
+    // Implement a toast notification system here
     alert(message); // Temporary solution
   }
 }

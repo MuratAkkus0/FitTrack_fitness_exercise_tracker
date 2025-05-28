@@ -40,7 +40,7 @@ class RegistrationFormType extends AbstractType
                 'mapped' => false,
                 'constraints' => [
                     new IsTrue([
-                        'message' => 'Kullanım şartlarını kabul etmelisiniz.',
+                        'message' => 'You must accept the terms of use.',
                     ]),
                 ],
                 'label' => false,
@@ -48,7 +48,7 @@ class RegistrationFormType extends AbstractType
             ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
-                'invalid_message' => 'Şifreler eşleşmiyor.',
+                'invalid_message' => 'Passwords do not match.',
                 'first_options' => [
                     'attr' => [
                         'class' => 'pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500',
@@ -69,11 +69,11 @@ class RegistrationFormType extends AbstractType
 
                 'constraints' => [
                     new NotBlank([
-                        'message' => 'Lütfen bir şifre giriniz',
+                        'message' => 'Please enter a password',
                     ]),
                     new Length([
                         'min' => 6,
-                        'minMessage' => 'Şifreniz en az {{ limit }} karakter olmalıdır',
+                        'minMessage' => 'Your password must be at least {{ limit }} characters',
                         // max length allowed by Symfony for security reasons
                         'max' => 4096,
                     ]),

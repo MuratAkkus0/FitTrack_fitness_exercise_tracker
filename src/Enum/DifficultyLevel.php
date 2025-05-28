@@ -17,10 +17,10 @@ enum DifficultyLevel: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::BEGINNER => 'Başlangıç',
-            self::INTERMEDIATE => 'Orta',
-            self::ADVANCED => 'İleri',
-            self::EXPERT => 'Uzman',
+            self::BEGINNER => 'Beginner',
+            self::INTERMEDIATE => 'Intermediate',
+            self::ADVANCED => 'Advanced',
+            self::EXPERT => 'Expert',
         };
     }
 }

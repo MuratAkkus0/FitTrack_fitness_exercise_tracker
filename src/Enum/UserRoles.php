@@ -16,9 +16,9 @@ enum UserRoles: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::USER => 'Kullanıcı',
-            self::ADMIN => 'Yönetici',
-            self::TRAINER => 'Antrenör',
+            self::USER => 'User',
+            self::ADMIN => 'Administrator',
+            self::TRAINER => 'Trainer',
         };
     }
 }

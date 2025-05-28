@@ -18,16 +18,16 @@ class ResetPasswordFormType extends AbstractType
         $builder
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
-                'invalid_message' => 'Şifreler eşleşmiyor.',
+                'invalid_message' => 'Passwords do not match.',
                 'first_options' => [
-                    'label' => 'Yeni Şifre',
+                    'label' => 'New Password',
                     'attr' => [
                         'class' => 'pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500',
                         'autocomplete' => 'new-password',
                     ],
                 ],
                 'second_options' => [
-                    'label' => 'Şifre Tekrarı',
+                    'label' => 'Confirm Password',
                     'attr' => [
                         'class' => 'pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500',
                         'autocomplete' => 'new-password',
@@ -35,17 +35,17 @@ class ResetPasswordFormType extends AbstractType
                 ],
                 'constraints' => [
                     new NotBlank([
-                        'message' => 'Şifre boş olamaz.',
+                        'message' => 'Password cannot be empty.',
                     ]),
                     new Length([
                         'min' => 6,
-                        'minMessage' => 'Şifre en az {{ limit }} karakter olmalıdır.',
+                        'minMessage' => 'Password must be at least {{ limit }} characters.',
                         'max' => 4096,
                     ]),
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Şifreyi Güncelle',
+                'label' => 'Update Password',
                 'attr' => [
                     'class' => 'w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500'
                 ],

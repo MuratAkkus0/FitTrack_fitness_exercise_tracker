@@ -3,7 +3,7 @@
 {% block dashboard_content %}
 
 	<div
-		class="space-y-6" data-controller="exercise-detail" data-exercise-detail-exercise-id-value="{{ exercise.id }}" data-exercise-detail-programs-api-url-value="{{ path('app_programs_api') }}" data-exercise-detail-add-to-program-url-value="{{ path('app_programs_add_exercise', {'programId': '__PROGRAM_ID__', 'exerciseId': '__EXERCISE_ID__'}) }}" data-exercise-detail-toggle-favorite-url-value="{{ path('app_exercises_toggle_favorite', {'id': exercise.id}) }}">
+		class="space-y-6" data-controller="exercise-detail" data-exercise-detail-exercise-id-value="{{ exercise.id }}" data-exercise-detail-programs-api-url-value="{{ path('app_programs_api') }}" data-exercise-detail-add-to-program-url-value="{{ path('app_programs_add_exercise', {'programId': '__PROGRAM_ID__', 'exerciseId': '__EXERCISE_ID__'}) }}">
 		<!-- Back Button -->
 		<div class="flex items-center space-x-4">
 			<a href="{{ path('app_exercises_index') }}" class="flex items-center text-indigo-600 hover:text-indigo-800 transition">
@@ -26,9 +26,9 @@
 						<i class="fas fa-plus mr-2"></i>
 						Add to Program
 					</button>
-					<button data-exercise-detail-target="favoriteBtn" data-action="click->exercise-detail#toggleFavorite" class="{{ isFavorite ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }} px-4 py-2 rounded-lg font-medium transition flex items-center">
-						<i class="fas fa-heart mr-2"></i>
-						Favorite
+					<button data-action="click->exercise-detail#deleteExercise" data-exercise-id="{{ exercise.id }}" data-exercise-name="{{ exercise.name }}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition flex items-center" title="Delete Exercise">
+						<i class="fas fa-trash mr-2"></i>
+						Delete
 					</button>
 				</div>
 			</div>
@@ -142,35 +142,35 @@
 				</div>
 			</div>
 		{% endif %}
-	</div>
 
-	<!-- Add to Program Modal -->
-	<div data-exercise-detail-target="addToProgramModal" data-action="click->exercise-detail#modalBackdropClick" class="fixed inset-0 hidden overflow-y-auto h-full w-full z-50">
-		<div class="fixed inset-0 bg-[rgba(0,0,0,0.5)] transition-all duration-300"></div>
-		<div data-exercise-detail-target="addToProgramModalContent" class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white transform transition-all duration-300 scale-95 opacity-0">
-			<div class="mt-3">
-				<div class="flex justify-between items-center mb-4">
-					<h3 class="text-lg font-bold text-indigo-900">Add to Program</h3>
-					<button data-exercise-detail-target="closeAddToProgramModalBtn" data-action="click->exercise-detail#closeAddToProgramModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
-						<i class="fas fa-times"></i>
-					</button>
-				</div>
-
-				<div class="space-y-4">
-					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">Select Program</label>
-						<div data-exercise-detail-target="programsList" class="space-y-2 max-h-60 overflow-y-auto">
-							<div class="text-center text-gray-500 py-4">Loading programs...</div>
-						</div>
+		<!-- Add to Program Modal -->
+		<div data-exercise-detail-target="addToProgramModal" data-action="click->exercise-detail#modalBackdropClick" class="fixed inset-0 hidden h-full w-full z-[9999]" style="display: none; align-items: center; justify-content: center;">
+			<div class="fixed inset-0 backdrop-blur-sm transition-all duration-300" style="background-color: rgba(0, 0, 0, 0.1) !important;"></div>
+			<div data-exercise-detail-target="addToProgramModalContent" class="relative p-5 border w-full max-w-lg shadow-lg rounded-md bg-white z-[10000]" style="transform: scale(0.95); opacity: 0; transition: all 0.3s ease;">
+				<div class="mt-3">
+					<div class="flex justify-between items-center mb-4">
+						<h3 class="text-lg font-bold text-indigo-900">Add to Program</h3>
+						<button data-exercise-detail-target="closeAddToProgramModalBtn" data-action="click->exercise-detail#closeAddToProgramModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+							<i class="fas fa-times"></i>
+						</button>
 					</div>
 
-					<div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-						<button type="button" data-exercise-detail-target="cancelAddToProgramBtn" data-action="click->exercise-detail#closeAddToProgramModal" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200">
-							Cancel
-						</button>
-						<button type="button" data-exercise-detail-target="confirmAddToProgramBtn" data-action="click->exercise-detail#addToProgram" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-200" disabled>
-							Add to Program
-						</button>
+					<div class="space-y-4">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2">Select Program</label>
+							<div data-exercise-detail-target="programsList" class="space-y-2 max-h-60 overflow-y-auto">
+								<div class="text-center text-gray-500 py-4">Loading programs...</div>
+							</div>
+						</div>
+
+						<div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+							<button type="button" data-exercise-detail-target="cancelAddToProgramBtn" data-action="click->exercise-detail#closeAddToProgramModal" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200">
+								Cancel
+							</button>
+							<button type="button" data-exercise-detail-target="confirmAddToProgramBtn" data-action="click->exercise-detail#addToProgram" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-200" disabled>
+								Add to Program
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -178,13 +178,27 @@
 	</div>
 
 	<style>
-		[data-exercise-detail-target="addToProgramModal"].active {
-			display: block !important;
+		[data-exercise-detail-target="addToProgramModal"] {
+			z-index: 9999;
 		}
 
-		[data-exercise-detail-target="addToProgramModal"].active [data-exercise-detail-target="addToProgramModalContent"] {
-			transform: scale(1) !important;
-			opacity: 1 !important;
+		[data-exercise-detail-target="addToProgramModalContent"] {
+			z-index: 10000;
+			max-height: 90vh;
+			overflow-y: auto;
+		}
+
+		/* Program selection styles */
+		.program-item.selected {
+			@apply border-orange-500 bg-orange-50;
+		}
+
+		.program-item:hover {
+			@apply border-gray-300 bg-gray-50;
+		}
+
+		.program-item.selected:hover {
+			@apply border-orange-500 bg-orange-50;
 		}
 
 		.line-clamp-2 {

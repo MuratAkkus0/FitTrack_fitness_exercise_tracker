@@ -16,18 +16,18 @@ class WorkoutLogDetails
     private ?int $id = null;
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'Tekrar sayısı boş olamaz')]
-    #[Assert\Range(min: 1, max: 1000, notInRangeMessage: 'Tekrar sayısı {{ min }} ile {{ max }} arasında olmalıdır')]
+    #[Assert\NotBlank(message: 'Reps count cannot be empty')]
+    #[Assert\Range(min: 1, max: 1000, notInRangeMessage: 'Reps count must be between {{ min }} and {{ max }}')]
     private ?int $reps = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
-    #[Assert\NotBlank(message: 'Ağırlık boş olamaz')]
-    #[Assert\Range(min: 0, max: 999.99, notInRangeMessage: 'Ağırlık {{ min }} ile {{ max }} kg arasında olmalıdır')]
+    #[Assert\NotBlank(message: 'Weight cannot be empty')]
+    #[Assert\Range(min: 0, max: 999.99, notInRangeMessage: 'Weight must be between {{ min }} and {{ max }} kg')]
     private ?string $weight = null;
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'Set sayısı boş olamaz')]
-    #[Assert\Range(min: 1, max: 50, notInRangeMessage: 'Set sayısı {{ min }} ile {{ max }} arasında olmalıdır')]
+    #[Assert\NotBlank(message: 'Sets count cannot be empty')]
+    #[Assert\Range(min: 1, max: 50, notInRangeMessage: 'Sets count must be between {{ min }} and {{ max }}')]
     private ?int $sets = null;
 
     #[ORM\Column(length: 255, nullable: true)]

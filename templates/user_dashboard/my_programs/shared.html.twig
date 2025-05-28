@@ -1,0 +1,188 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block title %}Shared Program - {{ program.name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ program.name }}</h1>
+                <p class="text-sm text-gray-600 mt-1">
+                    <i class="fas fa-user mr-1"></i>
+                    Shared by {{ owner.name }} {{ owner.surname }}
+                </p>
+            </div>
+            <div class="flex space-x-3">
+                <button 
+                    data-action="click->program-management#copySharedProgram" 
+                    data-share-code="{{ program.shareCode }}"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-copy mr-2"></i>
+                    Copy Program
+                </button>
+                <a href="{{ path('app_programs_browse_shared') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Go Back
+                </a>
+            </div>
+        </div>
+
+        {% if program.description %}
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 class="text-sm font-medium text-gray-900 mb-2">Description</h3>
+                <p class="text-sm text-gray-700">{{ program.description }}</p>
+            </div>
+        {% endif %}
+
+        <!-- Program Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-blue-50 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ exercises|length }}</div>
+                <div class="text-sm text-blue-800">Exercises</div>
+            </div>
+            {% if program.workoutsPerWeek %}
+                <div class="bg-green-50 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-green-600">{{ program.workoutsPerWeek }}</div>
+                    <div class="text-sm text-green-800">Weekly Days</div>
+                </div>
+            {% endif %}
+            {% if program.durationMinutes %}
+                <div class="bg-orange-50 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-orange-600">{{ program.durationMinutes }}</div>
+                    <div class="text-sm text-orange-800">Minutes</div>
+                </div>
+            {% endif %}
+            {% if program.difficultyLevel %}
+                <div class="bg-purple-50 rounded-lg p-4 text-center">
+                    <div class="text-sm font-bold text-purple-600">
+                        {% if program.difficultyLevel == 'beginner' %}
+                            Beginner
+                        {% elseif program.difficultyLevel == 'intermediate' %}
+                            Intermediate
+                        {% elseif program.difficultyLevel == 'advanced' %}
+                            Advanced
+                        {% elseif program.difficultyLevel == 'expert' %}
+                            Expert
+                        {% else %}
+                            {{ program.difficultyLevel|title }}
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-purple-800">Difficulty</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Exercises List -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-dumbbell mr-2 text-indigo-600"></i>
+                Exercises
+            </h2>
+        </div>
+        
+        {% if exercises|length > 0 %}
+            <div class="divide-y divide-gray-200">
+                {% for exercise in exercises %}
+                    <div class="px-6 py-4 hover:bg-gray-50 transition-colors duration-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h3 class="text-base font-medium text-gray-900">{{ exercise.name }}</h3>
+                                {% if exercise.description %}
+                                    <p class="text-sm text-gray-600 mt-1">{{ exercise.description }}</p>
+                                {% endif %}
+                                {% if exercise.targetMuscleGroup %}
+                                    <div class="mt-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                            <i class="fas fa-bullseye mr-1"></i>
+                                            {% if exercise.targetMuscleGroup.value == 'chest' %}
+                                                Chest
+                                            {% elseif exercise.targetMuscleGroup.value == 'back' %}
+                                                Back
+                                            {% elseif exercise.targetMuscleGroup.value == 'legs' %}
+                                                Legs
+                                            {% elseif exercise.targetMuscleGroup.value == 'shoulders' %}
+                                                Shoulders
+                                            {% elseif exercise.targetMuscleGroup.value == 'arms' %}
+                                                Arms
+                                            {% elseif exercise.targetMuscleGroup.value == 'core' %}
+                                                Core
+                                            {% else %}
+                                                {{ exercise.targetMuscleGroup.value|title }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4">
+                                <i class="fas fa-dumbbell text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="px-6 py-8 text-center">
+                <i class="fas fa-dumbbell text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">This program doesn't have any exercises yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Copy Success Modal -->
+<div id="copySuccessModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <i class="fas fa-check text-green-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Program Copied!</h3>
+                <p class="text-sm text-gray-500 mb-4">The program has been successfully copied to your account. You can now see it among your programs.</p>
+                <button onclick="window.location.href='{{ path('app_programs_index') }}'" 
+                        class="w-full inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Go to My Programs
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Copy shared program functionality
+    document.addEventListener('click', async function(e) {
+        if (e.target.closest('[data-action*="copySharedProgram"]')) {
+            e.preventDefault();
+            const button = e.target.closest('[data-action*="copySharedProgram"]');
+            const shareCode = button.dataset.shareCode;
+            
+            try {
+                const response = await fetch(`/dashboard/my-programs/shared/${shareCode}/copy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('copySuccessModal').classList.remove('hidden');
+                } else {
+                    alert(result.message || 'An error occurred while copying the program');
+                }
+            } catch (error) {
+                console.error('Copy error:', error);
+                alert('An error occurred while copying the program');
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

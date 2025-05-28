@@ -21,7 +21,7 @@ class ProgressController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Temel istatistikleri hesapla
+        // Calculate basic statistics
         $stats = $this->calculateUserStats($entityManager, $user);
 
         return $this->render('user_dashboard/progress/index.html.twig', [
@@ -34,7 +34,7 @@ class ProgressController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Son 30 günün antrenman verilerini getir
+        // Get workout data for the last 30 days
         $thirtyDaysAgo = new \DateTime('-30 days');
 
         $workouts = $entityManager->getRepository(WorkoutLogs::class)
@@ -48,7 +48,7 @@ class ProgressController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        // Günlük antrenman sayısı grafiği için veri hazırla
+        // Prepare data for daily workout count chart
         $dailyWorkouts = [];
         $workoutDurations = [];
 
@@ -64,10 +64,10 @@ class ProgressController extends AbstractController
             $workoutDurations[$date] += (float) $workout->getDuration();
         }
 
-        // Haftalık ilerleme verisi
+        // Weekly progress data
         $weeklyProgress = $this->calculateWeeklyProgress($entityManager, $user);
 
-        // En çok yapılan egzersizler
+        // Most performed exercises
         $topExercises = $this->getTopExercises($entityManager, $user);
 
         return $this->json([
@@ -85,10 +85,10 @@ class ProgressController extends AbstractController
         $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
 
         if (!$exercise) {
-            return $this->json(['error' => 'Egzersiz bulunamadı'], 404);
+            return $this->json(['error' => 'Exercise not found'], 404);
         }
 
-        // Bu egzersiz için son 3 ayın verilerini getir
+        // Get data for this exercise for the last 3 months
         $threeMonthsAgo = new \DateTime('-3 months');
 
         $exerciseData = $entityManager->createQueryBuilder()
@@ -132,7 +132,7 @@ class ProgressController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Bu haftanın başlangıcı
+        // Start of this week
         $weekStart = new \DateTime('monday this week');
         $weekEnd = new \DateTime('sunday this week');
 
@@ -165,11 +165,11 @@ class ProgressController extends AbstractController
 
     private function calculateUserStats(EntityManagerInterface $entityManager, $user): array
     {
-        // Toplam antrenman sayısı
+        // Total workout count
         $totalWorkouts = $entityManager->getRepository(WorkoutLogs::class)
             ->count(['user' => $user, 'is_completed' => true]);
 
-        // Toplam antrenman süresi
+        // Total workout duration
         $totalDuration = $entityManager->createQueryBuilder()
             ->select('SUM(w.duration)')
             ->from('App\Entity\WorkoutLogs', 'w')
@@ -179,7 +179,7 @@ class ProgressController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
-        // Bu ayki antrenman sayısı
+        // This month's workout count
         $thisMonthStart = new \DateTime('first day of this month');
         $thisMonthWorkouts = $entityManager->getRepository(WorkoutLogs::class)
             ->createQueryBuilder('w')
@@ -192,7 +192,7 @@ class ProgressController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
-        // Aktif program sayısı
+        // Active program count
         $activePrograms = $entityManager->getRepository(TrainingProgram::class)
             ->count(['users' => $user, 'is_active' => true]);
 

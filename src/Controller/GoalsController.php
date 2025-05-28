@@ -37,11 +37,11 @@ class GoalsController extends AbstractController
             $data = json_decode($request->getContent(), true);
             $user = $this->getUser();
 
-            // Validasyon
+            // Validation
             if (empty($data['title']) || empty($data['goalType'])) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Başlık ve hedef türü gereklidir'
+                    'message' => 'Title and goal type are required'
                 ], 400);
             }
 
@@ -62,7 +62,7 @@ class GoalsController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Hedef başarıyla oluşturuldu',
+                'message' => 'Goal created successfully',
                 'goal' => [
                     'id' => $goal->getId(),
                     'title' => $goal->getTitle(),
@@ -75,7 +75,7 @@ class GoalsController extends AbstractController
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Hedef oluşturulurken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while creating the goal: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -92,14 +92,14 @@ class GoalsController extends AbstractController
             if (!$goal || $goal->getUser() !== $user) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Hedef bulunamadı veya erişim yetkiniz yok'
+                    'message' => 'Goal not found or you do not have access'
                 ], 404);
             }
 
             if (isset($data['currentValue'])) {
                 $goal->setCurrentValue($data['currentValue']);
 
-                // Hedef tamamlandı mı kontrol et
+                // Check if goal is completed
                 if ($goal->getTargetValue() && $goal->getCurrentValue() >= $goal->getTargetValue()) {
                     $goal->setIsCompleted(true);
                 }
@@ -109,7 +109,7 @@ class GoalsController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'İlerleme başarıyla güncellendi',
+                'message' => 'Progress updated successfully',
                 'goal' => [
                     'id' => $goal->getId(),
                     'currentValue' => $goal->getCurrentValue(),
@@ -120,7 +120,7 @@ class GoalsController extends AbstractController
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'İlerleme güncellenirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while updating progress: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -135,7 +135,7 @@ class GoalsController extends AbstractController
             if (!$goal || $goal->getUser() !== $user) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Hedef bulunamadı veya erişim yetkiniz yok'
+                    'message' => 'Goal not found or you do not have access'
                 ], 404);
             }
 
@@ -146,12 +146,12 @@ class GoalsController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Hedef tamamlandı olarak işaretlendi'
+                'message' => 'Goal marked as completed'
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Hedef tamamlanırken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while completing the goal: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -166,7 +166,7 @@ class GoalsController extends AbstractController
             if (!$goal || $goal->getUser() !== $user) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Hedef bulunamadı veya erişim yetkiniz yok'
+                    'message' => 'Goal not found or you do not have access'
                 ], 404);
             }
 
@@ -175,12 +175,12 @@ class GoalsController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Hedef başarıyla silindi'
+                'message' => 'Goal deleted successfully'
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Hedef silinirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while deleting the goal: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -189,16 +189,16 @@ class GoalsController extends AbstractController
     public function getGoalTypes(): JsonResponse
     {
         $goalTypes = [
-            'weight_loss' => 'Kilo Verme',
-            'muscle_gain' => 'Kas Kazanımı',
-            'strength' => 'Güç Artırımı',
-            'endurance' => 'Dayanıklılık',
-            'flexibility' => 'Esneklik',
-            'body_fat' => 'Vücut Yağ Oranı',
-            'workout_frequency' => 'Antrenman Sıklığı',
-            'personal_record' => 'Kişisel Rekor',
-            'distance' => 'Mesafe',
-            'time' => 'Süre'
+            'weight_loss' => 'Weight Loss',
+            'muscle_gain' => 'Muscle Gain',
+            'strength' => 'Strength Increase',
+            'endurance' => 'Endurance',
+            'flexibility' => 'Flexibility',
+            'body_fat' => 'Body Fat Percentage',
+            'workout_frequency' => 'Workout Frequency',
+            'personal_record' => 'Personal Record',
+            'distance' => 'Distance',
+            'time' => 'Time'
         ];
 
         return $this->json($goalTypes);
@@ -215,7 +215,7 @@ class GoalsController extends AbstractController
         $totalGoals = count($activeGoals) + count($completedGoals);
         $completionRate = $totalGoals > 0 ? (count($completedGoals) / $totalGoals) * 100 : 0;
 
-        // Yaklaşan hedefler (1 hafta içinde bitiş tarihi olanlar)
+        // Upcoming goals (those with end date within 1 week)
         $upcomingGoals = array_filter($activeGoals, function ($goal) {
             $remainingDays = $goal->getRemainingDays();
             return $remainingDays !== null && $remainingDays <= 7 && $remainingDays >= 0;

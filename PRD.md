@@ -20,6 +20,7 @@ Bu uygulama, kullanıcıların antrenman programları oluşturmasına, egzersizl
 
 ### 2.1 Kullanıcı Yönetimi
 
+- **Uygulama Dili**: Ugulamanin dili ingilizce olmali.
 - **Kayıt ve Giriş**: Kullanıcılar e-posta ve şifre ile kayıt olabilir ve giriş yapabilir
 - **Profil Yönetimi**: Kullanıcılar kişisel bilgilerini (ad, soyad) ve profil fotoğrafını güncelleyebilir
 - **Rol Tabanlı Yetkilendirme**: Farklı kullanıcı rolleri (normal kullanıcı, admin) ve izinleri
@@ -57,7 +58,6 @@ Bu uygulama, kullanıcıların antrenman programları oluşturmasına, egzersizl
 - **Responsive Tasarım**: Mobil, tablet ve masaüstü uyumlu tasarım
 - **Dashboard**: Özet bilgilerin görüntülendiği kişiselleştirilmiş ana ekran
 - **Kolay Navigasyon**: Sezgisel menü yapısı ve kullanıcı akışı
-- **Tema Seçenekleri**: Açık/koyu tema desteği
 
 ## 3. Teknik Gereksinimler
 
@@ -65,7 +65,7 @@ Bu uygulama, kullanıcıların antrenman programları oluşturmasına, egzersizl
 
 - **Framework**: Symfony
 - **Veritabanı**: MySQL/PostgreSQL
-- **Frontend**: Twig, JavaScript, CSS (Bootstrap veya özel tasarım)
+- **Frontend**: Twig, JavaScript (stimulus framework), Tailwindcss
 - **Responsive Design**: Tüm cihazlar için optimize
 
 ### 3.2 Performans Gereksinimleri
@@ -113,10 +113,8 @@ Bu uygulama, kullanıcıların antrenman programları oluşturmasına, egzersizl
 ### 5.1 Kullanıcı Kaydı Akışı
 
 1. Kullanıcı kayıt formunu doldurur
-2. E-posta doğrulaması gönderilir
-3. Kullanıcı e-postasını doğrular
-4. Kullanıcı profil bilgilerini tamamlar
-5. Dashboard'a yönlendirilir
+2. Kullanıcı profil bilgilerini tamamlar
+3. Dashboard'a yönlendirilir
 
 ### 5.2 Antrenman Programı Oluşturma Akışı
 
@@ -150,16 +148,12 @@ Bu uygulama, kullanıcıların antrenman programları oluşturmasına, egzersizl
 1. Gelişmiş profil yönetimi
 2. Program paylaşımı
 3. İlerleme grafikleri
-4. Tema seçenekleri
-5. Egzersiz kategorileri ve filtreleme
+4. Egzersiz kategorileri ve filtreleme
 
 ### 6.3 Üçüncü Faz
 
-1. Antrenör-öğrenci ilişkisi
 2. Özel egzersiz ekleme
 3. Gelişmiş analitik ve raporlama
-4. Mobil uygulama entegrasyonu
-5. Sosyal özellikler (arkadaş ekleme, paylaşım)
 
 ## 7. Metrikler ve Analitik
 

@@ -23,9 +23,9 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
-    #[Assert\NotBlank(message: 'E-posta adresi boş olamaz')]
-    #[Assert\Email(message: 'Geçerli bir e-posta adresi giriniz')]
-    #[Assert\Length(max: 180, maxMessage: 'E-posta adresi {{ limit }} karakterden uzun olamaz')]
+    #[Assert\NotBlank(message: 'Email address cannot be empty')]
+    #[Assert\Email(message: 'Please enter a valid email address')]
+    #[Assert\Length(max: 180, maxMessage: 'Email address cannot be longer than {{ limit }} characters')]
     private ?string $email = null;
 
     /**
@@ -41,13 +41,13 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 45)]
-    #[Assert\NotBlank(message: 'Ad boş olamaz')]
-    #[Assert\Length(min: 2, max: 45, minMessage: 'Ad en az {{ limit }} karakter olmalıdır', maxMessage: 'Ad {{ limit }} karakterden uzun olamaz')]
+    #[Assert\NotBlank(message: 'First name cannot be empty')]
+    #[Assert\Length(min: 2, max: 45, minMessage: 'First name must be at least {{ limit }} characters', maxMessage: 'First name cannot be longer than {{ limit }} characters')]
     private ?string $name = null;
 
     #[ORM\Column(length: 45)]
-    #[Assert\NotBlank(message: 'Soyad boş olamaz')]
-    #[Assert\Length(min: 2, max: 45, minMessage: 'Soyad en az {{ limit }} karakter olmalıdır', maxMessage: 'Soyad {{ limit }} karakterden uzun olamaz')]
+    #[Assert\NotBlank(message: 'Last name cannot be empty')]
+    #[Assert\Length(min: 2, max: 45, minMessage: 'Last name must be at least {{ limit }} characters', maxMessage: 'Last name cannot be longer than {{ limit }} characters')]
     private ?string $surname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -77,19 +77,12 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: FitnessGoal::class, mappedBy: 'user')]
     private Collection $fitnessGoals;
 
-    /**
-     * @var Collection<int, BlogPost>
-     */
-    #[ORM\OneToMany(targetEntity: BlogPost::class, mappedBy: 'user')]
-    private Collection $blogPosts;
-
 
     public function __construct()
     {
         $this->training_programs = new ArrayCollection();
         $this->workoutLogs = new ArrayCollection();
         $this->fitnessGoals = new ArrayCollection();
-        $this->blogPosts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -311,36 +304,6 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($fitnessGoal->getUser() === $this) {
                 $fitnessGoal->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, BlogPost>
-     */
-    public function getBlogPosts(): Collection
-    {
-        return $this->blogPosts;
-    }
-
-    public function addBlogPost(BlogPost $blogPost): static
-    {
-        if (!$this->blogPosts->contains($blogPost)) {
-            $this->blogPosts->add($blogPost);
-            $blogPost->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBlogPost(BlogPost $blogPost): static
-    {
-        if ($this->blogPosts->removeElement($blogPost)) {
-            // set the owning side to null (unless already changed)
-            if ($blogPost->getUser() === $this) {
-                $blogPost->setUser(null);
             }
         }
 

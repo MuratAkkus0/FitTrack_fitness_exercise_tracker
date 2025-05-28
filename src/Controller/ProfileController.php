@@ -21,7 +21,7 @@ class ProfileController extends AbstractController
     #[Route('/', name: 'app_profile')]
     public function index(): Response
     {
-        // Kullanıcının giriş yapmış olması gerekiyor
+        // User must be logged in
         $this->denyAccessUnlessGranted('ROLE_USER');
 
         /** @var Users $user */
@@ -35,7 +35,7 @@ class ProfileController extends AbstractController
     #[Route('/edit', name: 'app_profile_edit')]
     public function edit(Request $request, EntityManagerInterface $entityManager, SluggerInterface $slugger): Response
     {
-        // Kullanıcının giriş yapmış olması gerekiyor
+        // User must be logged in
         $this->denyAccessUnlessGranted('ROLE_USER');
 
         /** @var Users $user */
@@ -43,19 +43,19 @@ class ProfileController extends AbstractController
 
         $form = $this->createFormBuilder($user)
             ->add('name', TextType::class, [
-                'label' => 'Ad',
+                'label' => 'First Name',
                 'attr' => [
                     'class' => 'block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500'
                 ],
             ])
             ->add('surname', TextType::class, [
-                'label' => 'Soyad',
+                'label' => 'Last Name',
                 'attr' => [
                     'class' => 'block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500'
                 ],
             ])
             ->add('profileImage', FileType::class, [
-                'label' => 'Profil Fotoğrafı',
+                'label' => 'Profile Picture',
                 'mapped' => false,
                 'required' => false,
                 'constraints' => [
@@ -65,7 +65,7 @@ class ProfileController extends AbstractController
                             'image/jpeg',
                             'image/png',
                         ],
-                        'mimeTypesMessage' => 'Lütfen geçerli bir resim dosyası yükleyin (JPEG, PNG)',
+                        'mimeTypesMessage' => 'Please upload a valid image file (JPEG, PNG)',
                     ])
                 ],
                 'attr' => [
@@ -73,7 +73,7 @@ class ProfileController extends AbstractController
                 ],
             ])
             ->add('save', SubmitType::class, [
-                'label' => 'Kaydet',
+                'label' => 'Save',
                 'attr' => [
                     'class' => 'w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500'
                 ],
@@ -96,7 +96,7 @@ class ProfileController extends AbstractController
                         $newFilename
                     );
 
-                    // Eski profil resmini silme (opsiyonel)
+                    // Delete old profile image (optional)
                     $oldProfileImage = $user->getProfileImage();
                     if ($oldProfileImage) {
                         $oldProfileImagePath = $this->getParameter('profile_images_directory') . '/' . $oldProfileImage;
@@ -107,14 +107,14 @@ class ProfileController extends AbstractController
 
                     $user->setProfileImage($newFilename);
                 } catch (FileException $e) {
-                    $this->addFlash('error', 'Profil fotoğrafı yüklenirken bir hata oluştu.');
+                    $this->addFlash('error', 'An error occurred while uploading the profile picture.');
                 }
             }
 
             $entityManager->persist($user);
             $entityManager->flush();
 
-            $this->addFlash('success', 'Profil bilgileriniz başarıyla güncellendi.');
+            $this->addFlash('success', 'Your profile information has been successfully updated.');
 
             return $this->redirectToRoute('app_profile');
         }

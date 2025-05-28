@@ -16,22 +16,22 @@ class ResetPasswordRequestFormType extends AbstractType
     {
         $builder
             ->add('email', EmailType::class, [
-                'label' => 'E-posta Adresi',
+                'label' => 'Email Address',
                 'attr' => [
                     'class' => 'pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500',
                     'placeholder' => 'email@example.com'
                 ],
                 'constraints' => [
                     new NotBlank([
-                        'message' => 'E-posta adresi boş olamaz.',
+                        'message' => 'Email address cannot be empty.',
                     ]),
                     new Email([
-                        'message' => 'Geçerli bir e-posta adresi girin.',
+                        'message' => 'Please enter a valid email address.',
                     ]),
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Şifre Sıfırlama Bağlantısı Gönder',
+                'label' => 'Send Password Reset Link',
                 'attr' => [
                     'class' => 'w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500'
                 ],

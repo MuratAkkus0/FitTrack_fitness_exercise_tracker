@@ -23,10 +23,10 @@ class AdminController extends AbstractController
         TrainingExercisesRepository $exercisesRepository,
         WorkoutLogsRepository $logsRepository
     ): Response {
-        // Sadece admin rolüne sahip kullanıcılar erişebilir
+        // Only users with admin role can access
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        // İstatistikleri hazırla
+        // Prepare statistics
         $usersCount = count($usersRepository->findAll());
         $programsCount = count($programRepository->findAll());
         $exercisesCount = count($exercisesRepository->findAll());
@@ -43,7 +43,7 @@ class AdminController extends AbstractController
     #[Route('/users', name: 'app_admin_users')]
     public function usersList(UsersRepository $usersRepository): Response
     {
-        // Sadece admin rolüne sahip kullanıcılar erişebilir
+        // Only users with admin role can access
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         $users = $usersRepository->findAll();
@@ -56,26 +56,26 @@ class AdminController extends AbstractController
     #[Route('/users/{id}/edit', name: 'app_admin_user_edit')]
     public function editUser(Request $request, Users $user, EntityManagerInterface $entityManager): Response
     {
-        // Sadece admin rolüne sahip kullanıcılar erişebilir
+        // Only users with admin role can access
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         $form = $this->createFormBuilder($user)
             ->add('name', null, [
-                'label' => 'Ad',
+                'label' => 'First Name',
             ])
             ->add('surname', null, [
-                'label' => 'Soyad',
+                'label' => 'Last Name',
             ])
             ->add('email', null, [
-                'label' => 'E-posta',
+                'label' => 'Email',
             ])
             ->add('roles', null, [
-                'label' => 'Roller',
+                'label' => 'Roles',
                 'expanded' => true,
                 'multiple' => true,
                 'choices' => [
-                    'Kullanıcı' => 'ROLE_USER',
-                    'Yönetici' => 'ROLE_ADMIN',
+                    'User' => 'ROLE_USER',
+                    'Administrator' => 'ROLE_ADMIN',
                 ],
             ])
             ->getForm();
@@ -86,7 +86,7 @@ class AdminController extends AbstractController
             $entityManager->persist($user);
             $entityManager->flush();
 
-            $this->addFlash('success', 'Kullanıcı bilgileri başarıyla güncellendi.');
+            $this->addFlash('success', 'User information has been successfully updated.');
 
             return $this->redirectToRoute('app_admin_users');
         }
@@ -100,14 +100,14 @@ class AdminController extends AbstractController
     #[Route('/users/{id}/delete', name: 'app_admin_user_delete', methods: ['POST'])]
     public function deleteUser(Request $request, Users $user, EntityManagerInterface $entityManager): Response
     {
-        // Sadece admin rolüne sahip kullanıcılar erişebilir
+        // Only users with admin role can access
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->request->get('_token'))) {
             $entityManager->remove($user);
             $entityManager->flush();
 
-            $this->addFlash('success', 'Kullanıcı başarıyla silindi.');
+            $this->addFlash('success', 'User has been successfully deleted.');
         }
 
         return $this->redirectToRoute('app_admin_users');

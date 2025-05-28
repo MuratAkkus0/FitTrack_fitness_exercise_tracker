@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\TrainingExercises;
-use App\Entity\FavoriteExercise;
 use App\Enum\MuscleGroup;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,24 +37,14 @@ class ExerciseLibraryController extends AbstractController
 
         $exercises = $queryBuilder->orderBy('e.name', 'ASC')->getQuery()->getResult();
 
-        // Kas gruplarını getir
+        // Get muscle groups
         $muscleGroups = MuscleGroup::cases();
-
-        // Kullanıcının favori egzersizlerini kontrol et
-        $user = $this->getUser();
-        $favoriteExerciseIds = [];
-        if ($user) {
-            $favoriteExercises = $entityManager->getRepository(FavoriteExercise::class)
-                ->findBy(['user' => $user]);
-            $favoriteExerciseIds = array_map(fn($fav) => $fav->getExercise()->getId(), $favoriteExercises);
-        }
 
         return $this->render('user_dashboard/exercise_library/index.html.twig', [
             'exercises' => $exercises,
             'muscleGroups' => $muscleGroups,
             'currentMuscleGroup' => $muscleGroup,
-            'currentSearch' => $search,
-            'favoriteExerciseIds' => $favoriteExerciseIds
+            'currentSearch' => $search
         ]);
     }
 
@@ -63,10 +52,10 @@ class ExerciseLibraryController extends AbstractController
     public function getExercisesApi(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
+            $page = max(1, (int) $request->query->get('page', 1));
+            $limit = min(50, max(1, (int) $request->query->get('limit', 12)));
             $muscleGroup = $request->query->get('muscle_group');
             $search = $request->query->get('search');
-            $page = (int) $request->query->get('page', 1);
-            $limit = (int) $request->query->get('limit', 20);
 
             $queryBuilder = $entityManager->getRepository(TrainingExercises::class)
                 ->createQueryBuilder('e');
@@ -91,21 +80,15 @@ class ExerciseLibraryController extends AbstractController
                 ->getQuery()
                 ->getResult();
 
-            $user = $this->getUser();
-            $exerciseData = array_map(function ($exercise) use ($entityManager, $user) {
-                $isFavorite = $entityManager->getRepository(FavoriteExercise::class)
-                    ->findOneBy(['user' => $user, 'exercise' => $exercise]) !== null;
-
+            $exerciseData = array_map(function ($exercise) {
                 return [
                     'id' => $exercise->getId(),
                     'name' => $exercise->getName(),
                     'description' => $exercise->getDescription(),
-                    'muscleGroup' => $exercise->getTargetMuscleGroup()?->value,
-                    'muscleGroupLabel' => $exercise->getTargetMuscleGroup()?->getLabel(),
+                    'muscleGroup' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->value : null,
+                    'muscleGroupLabel' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->getLabel() : 'Unknown',
                     'imageUrl' => $exercise->getImageUrl(),
-                    'videoUrl' => $exercise->getVideoUrl(),
-                    'instructions' => $exercise->getInstructions(),
-                    'isFavorite' => $isFavorite
+                    'videoUrl' => $exercise->getVideoUrl()
                 ];
             }, $exercises);
 
@@ -133,10 +116,10 @@ class ExerciseLibraryController extends AbstractController
         $exercise = $entityManager->getRepository(TrainingExercises::class)->find($id);
 
         if (!$exercise) {
-            throw $this->createNotFoundException('Egzersiz bulunamadı.');
+            throw $this->createNotFoundException('Exercise not found.');
         }
 
-        // Kullanıcının bu egzersizle ilgili son performansını getir
+        // Get user's recent performance with this exercise
         $user = $this->getUser();
         $recentPerformance = $entityManager->createQueryBuilder()
             ->select('wld.weight, wld.reps, wld.sets, wl.created_at')
@@ -152,7 +135,7 @@ class ExerciseLibraryController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        // Benzer egzersizleri getir (aynı kas grubu)
+        // Get similar exercises (same muscle group)
         $similarExercises = $entityManager->getRepository(TrainingExercises::class)
             ->createQueryBuilder('e')
             ->where('e.target_muscle_group = :muscleGroup')
@@ -163,15 +146,10 @@ class ExerciseLibraryController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        // Kullanıcının bu egzersizi favorilere eklemiş mi kontrol et
-        $isFavorite = $entityManager->getRepository(FavoriteExercise::class)
-            ->findOneBy(['user' => $user, 'exercise' => $exercise]) !== null;
-
         return $this->render('user_dashboard/exercise_library/detail.html.twig', [
             'exercise' => $exercise,
             'recentPerformance' => $recentPerformance,
-            'similarExercises' => $similarExercises,
-            'isFavorite' => $isFavorite
+            'similarExercises' => $similarExercises
         ]);
     }
 
@@ -194,15 +172,18 @@ class ExerciseLibraryController extends AbstractController
         try {
             $data = json_decode($request->getContent(), true);
 
-            // Validasyon
+            // Debug information
+            error_log('Exercise creation request received: ' . json_encode($data));
+
+            // Validation
             if (empty($data['name']) || empty($data['description']) || empty($data['muscleGroup'])) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Tüm alanlar doldurulmalıdır'
+                    'message' => 'All fields must be filled'
                 ], 400);
             }
 
-            // Kas grubu geçerli mi kontrol et
+            // Check if muscle group is valid
             $muscleGroup = null;
             foreach (MuscleGroup::cases() as $mg) {
                 if ($mg->value === $data['muscleGroup']) {
@@ -214,28 +195,28 @@ class ExerciseLibraryController extends AbstractController
             if (!$muscleGroup) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Geçersiz kas grubu'
+                    'message' => 'Invalid muscle group'
                 ], 400);
             }
 
-            // Aynı isimde egzersiz var mı kontrol et
+            // Check if exercise with same name already exists
             $existingExercise = $entityManager->getRepository(TrainingExercises::class)
                 ->findOneBy(['name' => $data['name']]);
 
             if ($existingExercise) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Bu isimde bir egzersiz zaten mevcut'
+                    'message' => 'An exercise with this name already exists'
                 ], 400);
             }
 
-            // Yeni egzersiz oluştur
+            // Create new exercise
             $exercise = new TrainingExercises();
             $exercise->setName($data['name']);
             $exercise->setDescription($data['description']);
             $exercise->setTargetMuscleGroup($muscleGroup);
 
-            // Opsiyonel alanları ekle
+            // Add optional fields
             if (!empty($data['imageUrl'])) {
                 $exercise->setImageUrl($data['imageUrl']);
             }
@@ -251,7 +232,7 @@ class ExerciseLibraryController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Özel egzersiz başarıyla oluşturuldu',
+                'message' => 'Custom exercise created successfully',
                 'exercise' => [
                     'id' => $exercise->getId(),
                     'name' => $exercise->getName(),
@@ -262,80 +243,69 @@ class ExerciseLibraryController extends AbstractController
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Egzersiz oluşturulurken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while creating the exercise: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    #[Route('/favorites', name: 'app_exercises_favorites', methods: ['GET'])]
-    public function getFavorites(EntityManagerInterface $entityManager): Response
-    {
-        $user = $this->getUser();
-
-        // En çok kullanılan egzersizleri favori olarak kabul et
-        $favoriteExercises = $entityManager->createQueryBuilder()
-            ->select('e, COUNT(wld.id) as usage_count')
-            ->from('App\Entity\TrainingExercises', 'e')
-            ->join('e.workoutLogDetails', 'wld')
-            ->join('wld.workoutLog', 'wl')
-            ->where('wl.user = :user')
-            ->andWhere('wl.is_completed = true')
-            ->setParameter('user', $user)
-            ->groupBy('e.id')
-            ->orderBy('usage_count', 'DESC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult();
-
-        return $this->render('user_dashboard/exercise_library/favorites.html.twig', [
-            'favoriteExercises' => $favoriteExercises
-        ]);
-    }
-
-    #[Route('/toggle-favorite/{id}', name: 'app_exercises_toggle_favorite', methods: ['POST'])]
-    public function toggleFavorite(int $id, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/delete/{id}', name: 'app_exercises_delete', methods: ['DELETE'])]
+    public function deleteExercise(int $id, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
-            $user = $this->getUser();
             $exercise = $entityManager->getRepository(TrainingExercises::class)->find($id);
 
             if (!$exercise) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Egzersiz bulunamadı'
+                    'message' => 'Exercise not found'
                 ], 404);
             }
 
-            // Mevcut favori kaydını kontrol et
-            $existingFavorite = $entityManager->getRepository(FavoriteExercise::class)
-                ->findOneBy(['user' => $user, 'exercise' => $exercise]);
+            // Check if exercise is used in programs
+            $programCount = $entityManager->createQueryBuilder()
+                ->select('COUNT(tp.id)')
+                ->from('App\Entity\TrainingProgram', 'tp')
+                ->join('tp.training_exercises', 'te')
+                ->where('te.id = :exerciseId')
+                ->setParameter('exerciseId', $id)
+                ->getQuery()
+                ->getSingleScalarResult();
 
-            if ($existingFavorite) {
-                // Favorilerden çıkar
-                $entityManager->remove($existingFavorite);
-                $isFavorite = false;
-                $message = 'Egzersiz favorilerden çıkarıldı';
-            } else {
-                // Favorilere ekle
-                $favorite = new FavoriteExercise();
-                $favorite->setUser($user);
-                $favorite->setExercise($exercise);
-                $entityManager->persist($favorite);
-                $isFavorite = true;
-                $message = 'Egzersiz favorilere eklendi';
+            if ($programCount > 0) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'This exercise is used in ' . $programCount . ' programs. Please remove it from programs first.'
+                ], 400);
             }
 
+            // Check if exercise is used in workout logs
+            $workoutLogCount = $entityManager->createQueryBuilder()
+                ->select('COUNT(wld.id)')
+                ->from('App\Entity\WorkoutLogDetails', 'wld')
+                ->where('wld.exercise = :exerciseId')
+                ->setParameter('exerciseId', $id)
+                ->getQuery()
+                ->getSingleScalarResult();
+
+            if ($workoutLogCount > 0) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'This exercise is used in workout logs. Cannot be deleted.'
+                ], 400);
+            }
+
+            // Delete exercise
+            $entityManager->remove($exercise);
             $entityManager->flush();
 
             return $this->json([
                 'success' => true,
-                'message' => $message,
-                'isFavorite' => $isFavorite
+                'message' => 'Exercise deleted successfully'
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Favori durumu değiştirilirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while deleting the exercise: ' . $e->getMessage()
             ], 500);
         }
     }

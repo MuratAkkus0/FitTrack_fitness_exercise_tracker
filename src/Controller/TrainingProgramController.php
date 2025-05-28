@@ -24,25 +24,25 @@ class TrainingProgramController extends AbstractController
             $user = $this->getUser();
             if (!$user) {
                 return $this->render('user_dashboard/my_programs/index.html.twig', [
-                    'error' => 'Kullanıcı kimlik doğrulaması yapılmamış',
+                    'error' => 'User authentication not performed',
                     'programs' => []
                 ]);
             }
 
-            // Debug: Kullanıcı bilgilerini kontrol et
+            // Debug: Check user information
             $userId = $user instanceof \App\Entity\Users ? $user->getId() : 'unknown';
             $userEmail = $user instanceof \App\Entity\Users ? $user->getEmail() : 'unknown';
 
-            // Önce tüm programları al
+            // First get all programs
             $allPrograms = $entityManager->getRepository(TrainingProgram::class)->findAll();
 
-            // Kullanıcıya ait tüm programları al (is_active filtresi olmadan)
+            // Get all programs belonging to the user (without is_active filter)
             $userAllPrograms = $entityManager->getRepository(TrainingProgram::class)->findBy(
                 ['users' => $user],
                 ['created_at' => 'DESC']
             );
 
-            // Sonra kullanıcıya ait aktif olanları filtrele
+            // Then filter active ones belonging to the user
             $programs = $entityManager->getRepository(TrainingProgram::class)->findBy(
                 ['users' => $user, 'is_active' => true],
                 ['created_at' => 'DESC']
@@ -58,12 +58,14 @@ class TrainingProgramController extends AbstractController
                     'durationMinutes' => $program->getDurationMinutes(),
                     'difficultyLevel' => $program->getDifficultyLevel(),
                     'isActive' => $program->isActive(),
+                    'isPublic' => $program->isPublic(),
+                    'shareCode' => $program->getShareCode(),
                     'exerciseCount' => count($program->getTrainingExercises()),
                     'createdAt' => $program->getCreatedAt()?->format('d.m.Y'),
                 ];
             }
 
-            $debugMessage = "Kullanıcı ID: $userId, Email: $userEmail, Toplam program: " . count($allPrograms) . ", Kullanıcı tüm programları: " . count($userAllPrograms) . ", Kullanıcı aktif programları: " . count($programs);
+            $debugMessage = "User ID: $userId, Email: $userEmail, Total programs: " . count($allPrograms) . ", User all programs: " . count($userAllPrograms) . ", User active programs: " . count($programs);
 
             return $this->render('user_dashboard/my_programs/index.html.twig', [
                 'programs' => $formattedPrograms,
@@ -71,7 +73,7 @@ class TrainingProgramController extends AbstractController
             ]);
         } catch (\Exception $e) {
             return $this->render('user_dashboard/my_programs/index.html.twig', [
-                'error' => 'Programlar yüklenirken hata oluştu: ' . $e->getMessage(),
+                'error' => 'An error occurred while loading programs: ' . $e->getMessage(),
                 'programs' => []
             ]);
         }
@@ -87,8 +89,8 @@ class TrainingProgramController extends AbstractController
                 return [
                     'id' => $exercise->getId(),
                     'name' => $exercise->getName(),
-                    'description' => $exercise->getDescription() ?? 'Açıklama yok',
-                    'muscleGroup' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->value : 'Bilinmiyor'
+                    'description' => $exercise->getDescription() ?? 'No description',
+                    'muscleGroup' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->value : 'Unknown'
                 ];
             }, $exercises);
 
@@ -96,12 +98,12 @@ class TrainingProgramController extends AbstractController
                 'success' => true,
                 'exercises' => $exerciseList,
                 'count' => count($exerciseList),
-                'debug' => 'Egzersizler başarıyla yüklendi'
+                'debug' => 'Exercises loaded successfully'
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Egzersizler yüklenirken hata oluştu: ' . $e->getMessage(),
+                'message' => 'An error occurred while loading exercises: ' . $e->getMessage(),
                 'debug' => $e->getTraceAsString()
             ], 500);
         }
@@ -113,18 +115,18 @@ class TrainingProgramController extends AbstractController
         try {
             $data = json_decode($request->getContent(), true);
 
-            // Validasyon
+            // Validation
             if (empty($data['programName'])) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Program adı boş olamaz'
+                    'message' => 'Program name cannot be empty'
                 ], 400);
             }
 
             if (strlen($data['programName']) < 3 || strlen($data['programName']) > 45) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Program adı 3-45 karakter arasında olmalıdır'
+                    'message' => 'Program name must be between 3-45 characters'
                 ], 400);
             }
 
@@ -136,7 +138,7 @@ class TrainingProgramController extends AbstractController
             $program->setDifficultyLevel($data['difficultyLevel'] ?? null);
             $program->setUsers($this->getUser());
 
-            // Seçilen egzersizleri ekle
+            // Add selected exercises
             if (isset($data['selectedExercises']) && is_array($data['selectedExercises'])) {
                 foreach ($data['selectedExercises'] as $exerciseId) {
                     $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
@@ -151,7 +153,7 @@ class TrainingProgramController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Program başarıyla oluşturuldu',
+                'message' => 'Program created successfully',
                 'program' => [
                     'id' => $program->getId(),
                     'name' => $program->getName(),
@@ -161,7 +163,7 @@ class TrainingProgramController extends AbstractController
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Program oluşturulurken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while creating the program: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -169,20 +171,20 @@ class TrainingProgramController extends AbstractController
     #[Route('/{id}/edit', name: 'app_programs_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, TrainingProgram $program, EntityManagerInterface $entityManager): Response
     {
-        // Kullanıcının sadece kendi programlarını düzenleyebilmesini sağla
+        // Ensure user can only edit their own programs
         if ($program->getUsers() !== $this->getUser()) {
-            throw $this->createAccessDeniedException('Bu programa erişim yetkiniz yok.');
+            throw $this->createAccessDeniedException('You do not have access to this program.');
         }
 
         if ($request->isMethod('POST')) {
             try {
                 $data = json_decode($request->getContent(), true);
 
-                // Validasyon
+                // Validation
                 if (empty($data['programName'])) {
                     return $this->json([
                         'success' => false,
-                        'message' => 'Program adı boş olamaz'
+                        'message' => 'Program name cannot be empty'
                     ], 400);
                 }
 
@@ -193,10 +195,10 @@ class TrainingProgramController extends AbstractController
                 $program->setDifficultyLevel($data['difficultyLevel'] ?? null);
                 $program->setUpdatedAt(new \DateTimeImmutable());
 
-                // Mevcut egzersizleri temizle
+                // Clear existing exercises
                 $program->getTrainingExercises()->clear();
 
-                // Yeni egzersizleri ekle
+                // Add new exercises
                 if (isset($data['selectedExercises']) && is_array($data['selectedExercises'])) {
                     foreach ($data['selectedExercises'] as $exerciseId) {
                         $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
@@ -210,17 +212,17 @@ class TrainingProgramController extends AbstractController
 
                 return $this->json([
                     'success' => true,
-                    'message' => 'Program başarıyla güncellendi'
+                    'message' => 'Program updated successfully'
                 ]);
             } catch (\Exception $e) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Program güncellenirken hata oluştu: ' . $e->getMessage()
+                    'message' => 'An error occurred while updating the program: ' . $e->getMessage()
                 ], 500);
             }
         }
 
-        // GET isteği için program verilerini döndür
+        // GET request, return program data
         $programData = [
             'id' => $program->getId(),
             'name' => $program->getName(),
@@ -241,15 +243,15 @@ class TrainingProgramController extends AbstractController
     public function delete(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
-            // Kullanıcının sadece kendi programlarını silebilmesini sağla
+            // Ensure user can only delete their own programs
             if ($program->getUsers() !== $this->getUser()) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Bu programa erişim yetkiniz yok.'
+                    'message' => 'You do not have access to delete this program.'
                 ], 403);
             }
 
-            // Soft delete - programı pasif yap
+            // Soft delete - mark program as inactive
             $program->setIsActive(false);
             $program->setUpdatedAt(new \DateTimeImmutable());
 
@@ -257,12 +259,12 @@ class TrainingProgramController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Program başarıyla silindi'
+                'message' => 'Program deleted successfully'
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Program silinirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while deleting the program: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -271,11 +273,11 @@ class TrainingProgramController extends AbstractController
     public function toggleStatus(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
     {
         try {
-            // Kullanıcının sadece kendi programlarını değiştirebilmesini sağla
+            // Ensure user can only toggle their own programs
             if ($program->getUsers() !== $this->getUser()) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Bu programa erişim yetkiniz yok.'
+                    'message' => 'You do not have access to toggle this program.'
                 ], 403);
             }
 
@@ -286,13 +288,13 @@ class TrainingProgramController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Program durumu başarıyla değiştirildi',
+                'message' => 'Program status toggled successfully',
                 'isActive' => $program->isActive()
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Program durumu değiştirilirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while toggling the program status: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -305,11 +307,11 @@ class TrainingProgramController extends AbstractController
             if (!$user) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Kullanıcı kimlik doğrulaması yapılmamış'
+                    'message' => 'User authentication not performed'
                 ], 401);
             }
 
-            // Kullanıcıya ait aktif programları al
+            // Get active programs belonging to the user
             $programs = $entityManager->getRepository(TrainingProgram::class)->findBy(
                 ['users' => $user, 'is_active' => true],
                 ['created_at' => 'DESC']
@@ -337,7 +339,7 @@ class TrainingProgramController extends AbstractController
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Programlar yüklenirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while loading programs: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -348,41 +350,41 @@ class TrainingProgramController extends AbstractController
         try {
             $user = $this->getUser();
 
-            // Programı kontrol et
+            // Check program
             $program = $entityManager->getRepository(TrainingProgram::class)->find($programId);
             if (!$program) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Program bulunamadı'
+                    'message' => 'Program not found'
                 ], 404);
             }
 
-            // Kullanıcının programa erişim yetkisi var mı kontrol et
+            // Check user access
             if ($program->getUsers() !== $user) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Bu programa erişim yetkiniz yok'
+                    'message' => 'You do not have access to add exercise to this program'
                 ], 403);
             }
 
-            // Egzersizi kontrol et
+            // Check exercise
             $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
             if (!$exercise) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Egzersiz bulunamadı'
+                    'message' => 'Exercise not found'
                 ], 404);
             }
 
-            // Egzersiz zaten programda var mı kontrol et
+            // Check if exercise already exists in program
             if ($program->getTrainingExercises()->contains($exercise)) {
                 return $this->json([
                     'success' => false,
-                    'message' => 'Bu egzersiz zaten programda mevcut'
+                    'message' => 'This exercise already exists in the program'
                 ], 400);
             }
 
-            // Egzersizi programa ekle
+            // Add exercise to program
             $program->addTrainingExercise($exercise);
             $program->setUpdatedAt(new \DateTimeImmutable());
 
@@ -390,14 +392,197 @@ class TrainingProgramController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'message' => 'Egzersiz programa başarıyla eklendi',
+                'message' => 'Exercise added to program successfully',
                 'exerciseCount' => count($program->getTrainingExercises())
             ]);
         } catch (\Exception $e) {
             return $this->json([
                 'success' => false,
-                'message' => 'Egzersiz programa eklenirken hata oluştu: ' . $e->getMessage()
+                'message' => 'An error occurred while adding exercise to program: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    #[Route('/{id}/share', name: 'app_programs_share', methods: ['POST'])]
+    public function shareProgram(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            // Ensure user can only share their own programs
+            if ($program->getUsers() !== $this->getUser()) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'You do not have access to share this program.'
+                ], 403);
+            }
+
+            // If already has a share code, use it
+            if (!$program->getShareCode()) {
+                // Generate unique share code
+                do {
+                    $shareCode = strtoupper(substr(md5(uniqid()), 0, 8));
+                    $existingProgram = $entityManager->getRepository(TrainingProgram::class)
+                        ->findOneBy(['share_code' => $shareCode]);
+                } while ($existingProgram);
+
+                $program->setShareCode($shareCode);
+            }
+
+            $program->setIsPublic(true);
+            $program->setUpdatedAt(new \DateTimeImmutable());
+
+            $entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Program shared successfully',
+                'shareCode' => $program->getShareCode(),
+                'shareUrl' => $this->generateUrl('app_programs_shared', ['shareCode' => $program->getShareCode()], \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL)
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'An error occurred while sharing the program: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/{id}/unshare', name: 'app_programs_unshare', methods: ['POST'])]
+    public function unshareProgram(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            // Ensure user can only unshare their own programs
+            if ($program->getUsers() !== $this->getUser()) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'You do not have access to unshare this program.'
+                ], 403);
+            }
+
+            $program->setIsPublic(false);
+            $program->setUpdatedAt(new \DateTimeImmutable());
+
+            $entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Program unshared successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'An error occurred while unsharing the program: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/shared/{shareCode}', name: 'app_programs_shared', methods: ['GET'])]
+    public function getSharedProgram(string $shareCode, EntityManagerInterface $entityManager): Response
+    {
+        $program = $entityManager->getRepository(TrainingProgram::class)
+            ->findOneBy(['share_code' => $shareCode, 'is_public' => true]);
+
+        if (!$program) {
+            throw $this->createNotFoundException('Shared program not found or no longer shared.');
+        }
+
+        return $this->render('user_dashboard/my_programs/shared.html.twig', [
+            'program' => $program,
+            'exercises' => $program->getTrainingExercises(),
+            'owner' => $program->getUsers()
+        ]);
+    }
+
+    #[Route('/shared/{shareCode}/copy', name: 'app_programs_copy_shared', methods: ['POST'])]
+    public function copySharedProgram(string $shareCode, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+            $originalProgram = $entityManager->getRepository(TrainingProgram::class)
+                ->findOneBy(['share_code' => $shareCode, 'is_public' => true]);
+
+            if (!$originalProgram) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Shared program not found'
+                ], 404);
+            }
+
+            // Check if user already has a copy of this program
+            $existingCopy = $entityManager->getRepository(TrainingProgram::class)
+                ->findOneBy([
+                    'users' => $user,
+                    'name' => $originalProgram->getName() . ' (Copy)',
+                    'is_active' => true
+                ]);
+
+            if ($existingCopy) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'This program is already copied'
+                ], 400);
+            }
+
+            // Create new program
+            $newProgram = new TrainingProgram();
+            $newProgram->setName($originalProgram->getName() . ' (Copy)');
+            $newProgram->setDescription($originalProgram->getDescription() . ' - ' . $originalProgram->getUsers()->getName() . ' ' . $originalProgram->getUsers()->getSurname() . ' shared');
+            $newProgram->setWorkoutsPerWeek($originalProgram->getWorkoutsPerWeek());
+            $newProgram->setDurationMinutes($originalProgram->getDurationMinutes());
+            $newProgram->setDifficultyLevel($originalProgram->getDifficultyLevel());
+            $newProgram->setUsers($user);
+            $newProgram->setIsPublic(false); // Copy defaults to private
+
+            // Copy exercises
+            foreach ($originalProgram->getTrainingExercises() as $exercise) {
+                $newProgram->addTrainingExercise($exercise);
+            }
+
+            $entityManager->persist($newProgram);
+            $entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Program copied successfully',
+                'program' => [
+                    'id' => $newProgram->getId(),
+                    'name' => $newProgram->getName()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'An error occurred while copying the program: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/browse-shared', name: 'app_programs_browse_shared', methods: ['GET'])]
+    public function browseSharedPrograms(EntityManagerInterface $entityManager): Response
+    {
+        $sharedPrograms = $entityManager->getRepository(TrainingProgram::class)
+            ->findBy(['is_public' => true, 'is_active' => true], ['created_at' => 'DESC']);
+
+        $formattedPrograms = [];
+        foreach ($sharedPrograms as $program) {
+            $formattedPrograms[] = [
+                'id' => $program->getId(),
+                'name' => $program->getName(),
+                'description' => $program->getDescription(),
+                'workoutsPerWeek' => $program->getWorkoutsPerWeek(),
+                'durationMinutes' => $program->getDurationMinutes(),
+                'difficultyLevel' => $program->getDifficultyLevel(),
+                'exerciseCount' => count($program->getTrainingExercises()),
+                'createdAt' => $program->getCreatedAt()?->format('d.m.Y'),
+                'shareCode' => $program->getShareCode(),
+                'owner' => [
+                    'name' => $program->getUsers()->getName(),
+                    'surname' => $program->getUsers()->getSurname()
+                ]
+            ];
+        }
+
+        return $this->render('user_dashboard/my_programs/browse_shared.html.twig', [
+            'sharedPrograms' => $formattedPrograms
+        ]);
     }
 }

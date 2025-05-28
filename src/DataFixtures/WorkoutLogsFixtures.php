@@ -23,13 +23,10 @@ class WorkoutLogsFixtures extends Fixture implements DependentFixtureInterface
         $workoutLogs->setNotes('Great workout session!');
         $workoutLogs->setTrainingProgram($this->getReference('training_program_1', TrainingProgram::class));
 
-        //Add to pivot table
-        // $workoutLogs->addWorkoutLogDetail($this->getReference('workout_log_detail_1', WorkoutLogDetails::class));
         $this->addReference('workout_log_1', $workoutLogs);
 
         $manager->persist($workoutLogs);
 
-        // Create another workout log
         $workoutLogs2 = new WorkoutLogs();
         $workoutLogs2->setUser($this->getReference('user_1', Users::class));
         $workoutLogs2->setCreatedAt(new DateTimeImmutable('-1 day'));

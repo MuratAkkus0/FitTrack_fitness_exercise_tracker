@@ -5,16 +5,16 @@
 		<div class="flex justify-between items-center mb-6">
 			<div>
 				<h3 class="text-xl font-bold text-indigo-900">{{ program.name }}</h3>
-				<p class="text-gray-600">{{ program.description ?? 'Açıklama yok' }}</p>
+				<p class="text-gray-600">{{ program.description ?? 'No description' }}</p>
 			</div>
 			<div class="flex space-x-3">
 				<button data-workout-timer-target="startButton" data-action="click->workout-timer#startTimer" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition">
 					<i class="fas fa-play mr-2"></i>
-					Başlat
+					Start
 				</button>
 				<button data-workout-timer-target="pauseButton" data-action="click->workout-timer#pauseTimer" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition hidden">
 					<i class="fas fa-pause mr-2"></i>
-					Duraklat
+					Pause
 				</button>
 				<div class="bg-indigo-100 text-indigo-800 px-3 py-2 rounded-lg text-sm">
 					<i class="fas fa-clock mr-1"></i>
@@ -26,12 +26,12 @@
 		<!-- Workout Progress -->
 		<div class="mb-6">
 			<div class="flex justify-between items-center mb-2">
-				<span class="text-sm font-medium text-gray-700">İlerleme</span>
+				<span class="text-sm font-medium text-gray-700">Progress</span>
 				<span class="text-sm text-gray-500">
 					<span data-workout-timer-target="completedExercises">0</span>
 					/
 					{{ exercises|length }}
-					egzersiz</span>
+					exercises</span>
 			</div>
 			<div class="w-full bg-gray-200 rounded-full h-2">
 				<div data-workout-timer-target="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -61,9 +61,9 @@
 					<div class="sets-container">
 						<div class="grid grid-cols-4 gap-2 mb-2 text-sm font-medium text-gray-600">
 							<div>Set</div>
-							<div>Ağırlık (kg)</div>
-							<div>Tekrar</div>
-							<div>Tamamlandı</div>
+							<div>Weight (kg)</div>
+							<div>Reps</div>
+							<div>Completed</div>
 						</div>
 
 						<div class="set-row grid grid-cols-4 gap-2 mb-2">
@@ -79,13 +79,13 @@
 					<div class="mt-3">
 						<button class="add-set-btn text-indigo-600 hover:text-indigo-800 text-sm">
 							<i class="fas fa-plus mr-1"></i>
-							Set Ekle
+							Add Set
 						</button>
 					</div>
 
 					<div class="mt-3">
-						<label class="block text-sm font-medium text-gray-700 mb-1">Notlar</label>
-						<textarea class="exercise-notes w-full border border-gray-300 rounded p-2" rows="2" placeholder="Bu egzersiz hakkında notlarınız..."></textarea>
+						<label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+						<textarea class="exercise-notes w-full border border-gray-300 rounded p-2" rows="2" placeholder="Your notes about this exercise..."></textarea>
 					</div>
 				</div>
 			{% endfor %}
@@ -95,11 +95,11 @@
 		<div class="mt-6 flex justify-between">
 			<button data-workout-timer-target="cancelButton" data-action="click->workout-timer#cancelWorkout" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition">
 				<i class="fas fa-times mr-2"></i>
-				İptal Et
+				Cancel
 			</button>
 			<button data-workout-timer-target="saveButton" data-action="click->workout-timer#saveWorkout" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition">
 				<i class="fas fa-save mr-2"></i>
-				Antrenmanı Kaydet
+				Save Workout
 			</button>
 		</div>
 	</div>
