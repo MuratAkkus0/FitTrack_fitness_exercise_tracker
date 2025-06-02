@@ -4,13 +4,14 @@ namespace App\Controller;
 
 use App\Entity\WorkoutLogs;
 use App\Entity\TrainingProgram;
-use App\Entity\TrainingExercises;
+use App\Entity\FitnessGoal;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/dashboard/progress')]
 #[IsGranted('ROLE_USER')]
@@ -21,11 +22,27 @@ class ProgressController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Calculate basic statistics
-        $stats = $this->calculateUserStats($entityManager, $user);
+        // Main stats
+        $stats = $this->getMainStats($entityManager, $user);
+
+        // Weekly progress (last 4 weeks)
+        $weeklyProgress = $this->getWeeklyProgress($entityManager, $user);
+
+        // Monthly summary
+        $monthlyStats = $this->getMonthlyStats($entityManager, $user);
+
+        // Top exercises
+        $topExercises = $this->getTopExercises($entityManager, $user);
+
+        // Recent workouts for progress tracking
+        $recentWorkouts = $this->getRecentWorkouts($entityManager, $user);
 
         return $this->render('user_dashboard/progress/index.html.twig', [
-            'stats' => $stats
+            'stats' => $stats,
+            'weeklyProgress' => $weeklyProgress,
+            'monthlyStats' => $monthlyStats,
+            'topExercises' => $topExercises,
+            'recentWorkouts' => $recentWorkouts
         ]);
     }
 
@@ -34,186 +51,99 @@ class ProgressController extends AbstractController
     {
         $user = $this->getUser();
 
-        // Get workout data for the last 30 days
-        $thirtyDaysAgo = new \DateTime('-30 days');
-
-        $workouts = $entityManager->getRepository(WorkoutLogs::class)
-            ->createQueryBuilder('w')
-            ->where('w.user = :user')
-            ->andWhere('w.created_at >= :thirtyDaysAgo')
-            ->andWhere('w.is_completed = true')
-            ->setParameter('user', $user)
-            ->setParameter('thirtyDaysAgo', $thirtyDaysAgo)
-            ->orderBy('w.created_at', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        // Prepare data for daily workout count chart
-        $dailyWorkouts = [];
-        $workoutDurations = [];
-
-        foreach ($workouts as $workout) {
-            $date = $workout->getCreatedAt()->format('Y-m-d');
-
-            if (!isset($dailyWorkouts[$date])) {
-                $dailyWorkouts[$date] = 0;
-                $workoutDurations[$date] = 0;
-            }
-
-            $dailyWorkouts[$date]++;
-            $workoutDurations[$date] += (float) $workout->getDuration();
-        }
-
-        // Weekly progress data
-        $weeklyProgress = $this->calculateWeeklyProgress($entityManager, $user);
-
-        // Most performed exercises
-        $topExercises = $this->getTopExercises($entityManager, $user);
-
-        return $this->json([
-            'dailyWorkouts' => $dailyWorkouts,
-            'workoutDurations' => $workoutDurations,
-            'weeklyProgress' => $weeklyProgress,
-            'topExercises' => $topExercises
-        ]);
-    }
-
-    #[Route('/exercise/{exerciseId}/progress', name: 'app_progress_exercise', methods: ['GET'])]
-    public function exerciseProgress(int $exerciseId, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $user = $this->getUser();
-        $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
-
-        if (!$exercise) {
-            return $this->json(['error' => 'Exercise not found'], 404);
-        }
-
-        // Get data for this exercise for the last 3 months
-        $threeMonthsAgo = new \DateTime('-3 months');
-
-        $exerciseData = $entityManager->createQueryBuilder()
-            ->select('wld.weight, wld.reps, wld.sets, wl.created_at')
-            ->from('App\Entity\WorkoutLogDetails', 'wld')
-            ->join('wld.workoutLog', 'wl')
+        // Get workout data for charts
+        $workoutData = $entityManager->createQueryBuilder()
+            ->select('DATE(wl.workout_date) as date, COUNT(wl.id) as count')
+            ->from(WorkoutLogs::class, 'wl')
             ->where('wl.user = :user')
-            ->andWhere('wld.exercise = :exercise')
-            ->andWhere('wl.created_at >= :threeMonthsAgo')
-            ->andWhere('wl.is_completed = true')
+            ->andWhere('wl.workout_date >= :thirtyDaysAgo')
             ->setParameter('user', $user)
-            ->setParameter('exercise', $exercise)
-            ->setParameter('threeMonthsAgo', $threeMonthsAgo)
-            ->orderBy('wl.created_at', 'ASC')
+            ->setParameter('thirtyDaysAgo', new \DateTime('-30 days'))
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
             ->getQuery()
             ->getResult();
-
-        $progressData = [];
-        foreach ($exerciseData as $data) {
-            $progressData[] = [
-                'date' => $data['created_at']->format('Y-m-d'),
-                'weight' => (float) $data['weight'],
-                'reps' => $data['reps'],
-                'sets' => $data['sets'],
-                'volume' => (float) $data['weight'] * $data['reps'] * $data['sets']
-            ];
-        }
 
         return $this->json([
-            'exercise' => [
-                'id' => $exercise->getId(),
-                'name' => $exercise->getName(),
-                'muscleGroup' => $exercise->getTargetMuscleGroup()?->value
-            ],
-            'progressData' => $progressData
+            'workoutData' => $workoutData
         ]);
     }
 
-    #[Route('/reports/weekly', name: 'app_progress_weekly_report', methods: ['GET'])]
-    public function weeklyReport(EntityManagerInterface $entityManager): Response
+    #[Route('/performance-report', name: 'app_progress_performance_report', methods: ['POST'])]
+    public function performanceReport(Request $request): JsonResponse
     {
-        $user = $this->getUser();
+        try {
+            $data = json_decode($request->getContent(), true);
 
-        // Start of this week
-        $weekStart = new \DateTime('monday this week');
-        $weekEnd = new \DateTime('sunday this week');
-
-        $weeklyWorkouts = $entityManager->getRepository(WorkoutLogs::class)
-            ->createQueryBuilder('w')
-            ->where('w.user = :user')
-            ->andWhere('w.created_at >= :weekStart')
-            ->andWhere('w.created_at <= :weekEnd')
-            ->setParameter('user', $user)
-            ->setParameter('weekStart', $weekStart)
-            ->setParameter('weekEnd', $weekEnd)
-            ->getQuery()
-            ->getResult();
-
-        $weeklyStats = [
-            'totalWorkouts' => count($weeklyWorkouts),
-            'totalDuration' => array_sum(array_map(fn($w) => (float) $w->getDuration(), $weeklyWorkouts)),
-            'completedWorkouts' => count(array_filter($weeklyWorkouts, fn($w) => $w->isCompleted())),
-            'averageDuration' => count($weeklyWorkouts) > 0 ?
-                array_sum(array_map(fn($w) => (float) $w->getDuration(), $weeklyWorkouts)) / count($weeklyWorkouts) : 0
-        ];
-
-        return $this->render('user_dashboard/progress/weekly_report.html.twig', [
-            'weeklyStats' => $weeklyStats,
-            'weeklyWorkouts' => $weeklyWorkouts,
-            'weekStart' => $weekStart,
-            'weekEnd' => $weekEnd
-        ]);
+            // Log performance data if needed (optional)
+            // For now, just acknowledge receipt
+            return $this->json([
+                'success' => true,
+                'message' => 'Performance report received'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error processing performance report'
+            ], 500);
+        }
     }
 
-    private function calculateUserStats(EntityManagerInterface $entityManager, $user): array
+    private function getMainStats(EntityManagerInterface $entityManager, $user): array
     {
-        // Total workout count
+        // Total completed workouts
         $totalWorkouts = $entityManager->getRepository(WorkoutLogs::class)
             ->count(['user' => $user, 'is_completed' => true]);
 
-        // Total workout duration
+        // Total workout time
         $totalDuration = $entityManager->createQueryBuilder()
             ->select('SUM(w.duration)')
-            ->from('App\Entity\WorkoutLogs', 'w')
-            ->where('w.user = :user')
-            ->andWhere('w.is_completed = true')
+            ->from(WorkoutLogs::class, 'w')
+            ->where('w.user = :user AND w.is_completed = true')
             ->setParameter('user', $user)
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
-        // This month's workout count
-        $thisMonthStart = new \DateTime('first day of this month');
+        // This month's workouts
+        $thisMonth = new \DateTime('first day of this month');
         $thisMonthWorkouts = $entityManager->getRepository(WorkoutLogs::class)
             ->createQueryBuilder('w')
             ->select('COUNT(w.id)')
             ->where('w.user = :user')
-            ->andWhere('w.created_at >= :thisMonthStart')
+            ->andWhere('w.created_at >= :thisMonth')
             ->andWhere('w.is_completed = true')
             ->setParameter('user', $user)
-            ->setParameter('thisMonthStart', $thisMonthStart)
+            ->setParameter('thisMonth', $thisMonth)
             ->getQuery()
-            ->getSingleScalarResult() ?? 0;
+            ->getSingleScalarResult();
 
-        // Active program count
+        // Active programs
         $activePrograms = $entityManager->getRepository(TrainingProgram::class)
             ->count(['users' => $user, 'is_active' => true]);
 
+        // Active goals
+        $activeGoals = $entityManager->getRepository(FitnessGoal::class)
+            ->count(['user' => $user, 'is_active' => true, 'is_completed' => false]);
+
         return [
             'totalWorkouts' => $totalWorkouts,
-            'totalDuration' => round((float) $totalDuration, 2),
+            'totalDuration' => round($totalDuration, 1),
             'thisMonthWorkouts' => $thisMonthWorkouts,
             'activePrograms' => $activePrograms,
-            'averageDuration' => $totalWorkouts > 0 ? round((float) $totalDuration / $totalWorkouts, 2) : 0
+            'activeGoals' => $activeGoals,
+            'averageDuration' => $totalWorkouts > 0 ? round($totalDuration / $totalWorkouts, 1) : 0
         ];
     }
 
-    private function calculateWeeklyProgress(EntityManagerInterface $entityManager, $user): array
+    private function getWeeklyProgress(EntityManagerInterface $entityManager, $user): array
     {
         $weeklyData = [];
 
-        for ($i = 6; $i >= 0; $i--) {
+        for ($i = 3; $i >= 0; $i--) {
             $weekStart = new \DateTime("-{$i} weeks monday");
-            $weekEnd = new \DateTime("-{$i} weeks sunday");
+            $weekEnd = new \DateTime("-{$i} weeks sunday 23:59:59");
 
-            $weekWorkouts = $entityManager->getRepository(WorkoutLogs::class)
+            $workoutCount = $entityManager->getRepository(WorkoutLogs::class)
                 ->createQueryBuilder('w')
                 ->select('COUNT(w.id)')
                 ->where('w.user = :user')
@@ -224,21 +154,63 @@ class ProgressController extends AbstractController
                 ->setParameter('weekStart', $weekStart)
                 ->setParameter('weekEnd', $weekEnd)
                 ->getQuery()
-                ->getSingleScalarResult() ?? 0;
+                ->getSingleScalarResult();
 
             $weeklyData[] = [
-                'week' => $weekStart->format('M d'),
-                'workouts' => $weekWorkouts
+                'week' => $weekStart->format('M j'),
+                'workouts' => (int) $workoutCount
             ];
         }
 
         return $weeklyData;
     }
 
+    private function getMonthlyStats(EntityManagerInterface $entityManager, $user): array
+    {
+        $currentMonth = new \DateTime('first day of this month');
+        $lastMonth = new \DateTime('first day of last month');
+        $lastMonthEnd = new \DateTime('last day of last month 23:59:59');
+
+        // This month
+        $thisMonthWorkouts = $entityManager->getRepository(WorkoutLogs::class)
+            ->createQueryBuilder('w')
+            ->select('COUNT(w.id)')
+            ->where('w.user = :user')
+            ->andWhere('w.created_at >= :thisMonth')
+            ->andWhere('w.is_completed = true')
+            ->setParameter('user', $user)
+            ->setParameter('thisMonth', $currentMonth)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Last month
+        $lastMonthWorkouts = $entityManager->getRepository(WorkoutLogs::class)
+            ->createQueryBuilder('w')
+            ->select('COUNT(w.id)')
+            ->where('w.user = :user')
+            ->andWhere('w.created_at >= :lastMonth')
+            ->andWhere('w.created_at <= :lastMonthEnd')
+            ->andWhere('w.is_completed = true')
+            ->setParameter('user', $user)
+            ->setParameter('lastMonth', $lastMonth)
+            ->setParameter('lastMonthEnd', $lastMonthEnd)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $improvement = $lastMonthWorkouts > 0 ?
+            round((($thisMonthWorkouts - $lastMonthWorkouts) / $lastMonthWorkouts) * 100, 1) : 0;
+
+        return [
+            'thisMonth' => (int) $thisMonthWorkouts,
+            'lastMonth' => (int) $lastMonthWorkouts,
+            'improvement' => $improvement
+        ];
+    }
+
     private function getTopExercises(EntityManagerInterface $entityManager, $user): array
     {
-        $topExercises = $entityManager->createQueryBuilder()
-            ->select('e.name, COUNT(wld.id) as exercise_count')
+        return $entityManager->createQueryBuilder()
+            ->select('e.name, COUNT(wld.id) as count')
             ->from('App\Entity\WorkoutLogDetails', 'wld')
             ->join('wld.exercise', 'e')
             ->join('wld.workoutLog', 'wl')
@@ -246,11 +218,18 @@ class ProgressController extends AbstractController
             ->andWhere('wl.is_completed = true')
             ->setParameter('user', $user)
             ->groupBy('e.id')
-            ->orderBy('exercise_count', 'DESC')
+            ->orderBy('count', 'DESC')
             ->setMaxResults(5)
             ->getQuery()
             ->getResult();
+    }
 
-        return $topExercises;
+    private function getRecentWorkouts(EntityManagerInterface $entityManager, $user): array
+    {
+        return $entityManager->getRepository(WorkoutLogs::class)->findBy(
+            ['user' => $user, 'is_completed' => true],
+            ['created_at' => 'DESC'],
+            5
+        );
     }
 }

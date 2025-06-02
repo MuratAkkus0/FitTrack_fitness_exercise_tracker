@@ -1,0 +1,225 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block title %}Workout Details - FitTrack
+{% endblock %}
+
+{% block dashboard_content %}
+	<div
+		class="space-y-6">
+		<!-- Header -->
+		<div class="bg-white rounded-xl shadow-md p-6">
+			<div class="flex justify-between items-start mb-4">
+				<div>
+					<h1 class="text-2xl font-bold text-indigo-900 mb-2">Workout Details</h1>
+					<div class="flex items-center space-x-4 text-gray-600">
+						<span class="flex items-center">
+							<i class="fas fa-calendar-alt mr-2"></i>
+							{{ workout.createdAt ? workout.createdAt|date('F j, Y') : 'Date not set' }}
+						</span>
+						<span class="flex items-center">
+							<i class="fas fa-clock mr-2"></i>
+							{% if workout.duration %}
+								{{ workout.duration }}
+								minutes
+							{% else %}
+								Duration not recorded
+							{% endif %}
+						</span>
+						<span class="flex items-center">
+							<i class="fas fa-check-circle mr-2 {{ workout.isCompleted ? 'text-green-500' : 'text-gray-400' }}"></i>
+							{{ workout.isCompleted ? 'Completed' : 'Incomplete' }}
+						</span>
+					</div>
+				</div>
+				<div class="flex space-x-3">
+					<a href="{{ path('app_workout_history') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition">
+						<i class="fas fa-arrow-left mr-2"></i>
+						Back to History
+					</a>
+				</div>
+			</div>
+
+			{% if workout.trainingProgram %}
+				<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+					<h3 class="font-semibold text-indigo-900 mb-1">Training Program</h3>
+					<p class="text-indigo-700">{{ workout.trainingProgram.name }}</p>
+					{% if workout.trainingProgram.description %}
+						<p class="text-sm text-indigo-600 mt-1">{{ workout.trainingProgram.description }}</p>
+					{% endif %}
+				</div>
+			{% endif %}
+		</div>
+
+		<!-- Workout Statistics -->
+		<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+			<div class="bg-white rounded-lg shadow p-4">
+				<div class="flex items-center">
+					<div class="p-2 bg-blue-100 rounded-lg">
+						<i class="fas fa-dumbbell text-blue-600"></i>
+					</div>
+					<div class="ml-3">
+						<p class="text-sm font-medium text-gray-600">Total Exercises</p>
+						<p class="text-lg font-semibold text-gray-900">{{ exerciseDetails|length }}</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="bg-white rounded-lg shadow p-4">
+				<div class="flex items-center">
+					<div class="p-2 bg-green-100 rounded-lg">
+						<i class="fas fa-weight-hanging text-green-600"></i>
+					</div>
+					<div class="ml-3">
+						<p class="text-sm font-medium text-gray-600">Total Sets</p>
+						<p class="text-lg font-semibold text-gray-900">
+							{% set totalSets = 0 %}
+							{% for exercise in exerciseDetails %}
+								{% set totalSets = totalSets + (exercise.sets ?: 0) %}
+							{% endfor %}
+							{{ totalSets }}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="bg-white rounded-lg shadow p-4">
+				<div class="flex items-center">
+					<div class="p-2 bg-purple-100 rounded-lg">
+						<i class="fas fa-repeat text-purple-600"></i>
+					</div>
+					<div class="ml-3">
+						<p class="text-sm font-medium text-gray-600">Total Reps</p>
+						<p class="text-lg font-semibold text-gray-900">
+							{% set totalReps = 0 %}
+							{% for exercise in exerciseDetails %}
+								{% set totalReps = totalReps + (exercise.reps ?: 0) %}
+							{% endfor %}
+							{{ totalReps }}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="bg-white rounded-lg shadow p-4">
+				<div class="flex items-center">
+					<div class="p-2 bg-orange-100 rounded-lg">
+						<i class="fas fa-stopwatch text-orange-600"></i>
+					</div>
+					<div class="ml-3">
+						<p class="text-sm font-medium text-gray-600">Duration</p>
+						<p class="text-lg font-semibold text-gray-900">
+							{{ workout.duration ? workout.duration ~ ' min' : 'N/A' }}
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Exercise Details -->
+		<div class="bg-white rounded-xl shadow-md">
+			<div class="p-6 border-b border-gray-200">
+				<h2 class="text-xl font-bold text-gray-900">Exercise Details</h2>
+			</div>
+
+			{% if exerciseDetails|length > 0 %}
+				<div class="p-6">
+					<div class="space-y-6">
+						{% for exercise in exerciseDetails %}
+							<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+								<div class="flex justify-between items-start mb-4">
+									<div>
+										<h3 class="text-lg font-semibold text-gray-900">
+											{{ exercise.exerciseName ?: 'Unknown Exercise' }}
+										</h3>
+									</div>
+									<div class="text-right">
+										<span class="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">
+											Exercise #{{ loop.index }}
+										</span>
+									</div>
+								</div>
+
+								<!-- Exercise Stats Grid -->
+								<div class="grid grid-cols-3 gap-4 mb-4">
+									<div class="text-center p-3 bg-gray-50 rounded-lg">
+										<p class="text-sm font-medium text-gray-600">Sets</p>
+										<p class="text-xl font-bold text-gray-900">
+											{{ exercise.sets ?: '0' }}
+										</p>
+									</div>
+									<div class="text-center p-3 bg-gray-50 rounded-lg">
+										<p class="text-sm font-medium text-gray-600">Reps</p>
+										<p class="text-xl font-bold text-gray-900">
+											{{ exercise.reps ?: '0' }}
+										</p>
+									</div>
+									<div class="text-center p-3 bg-gray-50 rounded-lg">
+										<p class="text-sm font-medium text-gray-600">Weight (kg)</p>
+										<p class="text-xl font-bold text-gray-900">
+											{{ exercise.weight ?: '0' }}
+										</p>
+									</div>
+								</div>
+
+								<!-- Exercise Notes -->
+								{% if exercise.notes %}
+									<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+										<h4 class="text-sm font-medium text-yellow-800 mb-1">
+											<i class="fas fa-sticky-note mr-1"></i>
+											Notes
+										</h4>
+										<p class="text-sm text-yellow-700">{{ exercise.notes }}</p>
+									</div>
+								{% endif %}
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+			{% else %}
+				<div class="p-6 text-center">
+					<div class="inline-block p-6 bg-gray-100 rounded-full mb-4">
+						<i class="fas fa-dumbbell text-gray-400 text-3xl"></i>
+					</div>
+					<h3 class="text-lg font-medium text-gray-900 mb-2">No Exercise Details</h3>
+					<p class="text-gray-600 max-w-md mx-auto">
+						This workout doesn't have any exercise details recorded.
+					</p>
+				</div>
+			{% endif %}
+		</div>
+
+		<!-- Additional Workout Information -->
+		{% if workout.notes %}
+			<div class="bg-white rounded-xl shadow-md p-6">
+				<h2 class="text-xl font-bold text-gray-900 mb-4">Workout Notes</h2>
+				<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+					<p class="text-blue-800">{{ workout.notes }}</p>
+				</div>
+			</div>
+		{% endif %}
+
+		<!-- Action Buttons -->
+		<div class="bg-white rounded-xl shadow-md p-6">
+			<div class="flex justify-between items-center">
+				<div>
+					<p class="text-sm text-gray-600">
+						Workout created on
+						{{ workout.createdAt|date('F j, Y \\a\\t g:i A') }}
+					</p>
+				</div>
+				<div class="flex space-x-3">
+					{% if workout.trainingProgram %}
+						<a href="{{ path('app_workout_start', {'programId': workout.trainingProgram.id}) }}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition">
+							<i class="fas fa-redo mr-2"></i>
+							Repeat Workout
+						</a>
+					{% endif %}
+					<a href="{{ path('app_workout_history') }}" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium transition">
+						<i class="fas fa-history mr-2"></i>
+						View All Workouts
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

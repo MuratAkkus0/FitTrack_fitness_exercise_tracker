@@ -1,106 +1,157 @@
 {% extends 'user_dashboard/dashboard_template.html.twig' %}
 
 {% block dashboard_content %}
-	<div id="todayWorkout" class="bg-white rounded-xl shadow-md p-6">
-		<div class="flex justify-between items-center mb-6">
-			<h3 class="text-xl font-bold text-indigo-900">Today's Workout: Upper Body</h3>
-			<div class="flex space-x-3">
-				<button class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
-					<i class="fas fa-calendar-day mr-1"></i>
-					July 18, 2023
-				</button>
-				<button class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-					<i class="fas fa-clock mr-1"></i>
-					45 min
-				</button>
+	<div
+		class="space-y-6">
+		<!-- Header Section -->
+		<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+			<div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+				<div>
+					<h1 class="text-2xl font-bold text-gray-900 mb-2">Today's Workout</h1>
+					<p class="text-gray-600">{{ currentDay }},
+						{{ currentDate }}</p>
+				</div>
+				<div class="flex flex-wrap gap-3 mt-4 md:mt-0">
+					<div class="inline-flex items-center bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium">
+						<i class="fas fa-calendar-week mr-2"></i>
+						{{ weeklyWorkoutCount }}
+						workouts this week
+					</div>
+					<div class="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium">
+						<i class="fas fa-check-circle mr-2"></i>
+						{{ todaysWorkouts|length }}
+						completed today
+					</div>
+				</div>
 			</div>
 		</div>
 
-		<!-- Workout Exercises -->
-		<div
-			class="space-y-4">
-			<!-- Exercise 1 -->
-			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-				<div class="flex justify-between items-center mb-2">
-					<h4 class="font-semibold">Bench Press</h4>
-					<div class="flex space-x-2">
-						<button class="text-gray-500 hover:text-orange-500">
-							<i class="fas fa-edit"></i>
-						</button>
-						<button class="text-gray-500 hover:text-red-500">
-							<i class="fas fa-trash"></i>
-						</button>
-					</div>
-				</div>
-				<div class="grid grid-cols-3 gap-4 mb-3">
-					<div>
-						<label class="text-sm text-gray-500">Weight (kg)</label>
-						<input type="number" value="70" class="w-full border border-gray-300 rounded p-2">
-					</div>
-					<div>
-						<label class="text-sm text-gray-500">Sets</label>
-						<input type="number" value="4" class="w-full border border-gray-300 rounded p-2">
-					</div>
-					<div>
-						<label class="text-sm text-gray-500">Reps</label>
-						<input type="number" value="8" class="w-full border border-gray-300 rounded p-2">
-					</div>
-				</div>
-				<div>
-					<label class="text-sm text-gray-500">Notes</label>
-					<textarea class="w-full border border-gray-300 rounded p-2" rows="2">Felt strong today, could increase weight next time</textarea>
-				</div>
-			</div>
-
-			<!-- Exercise 2 -->
-			<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-				<div class="flex justify-between items-center mb-2">
-					<h4 class="font-semibold">Incline Dumbbell Press</h4>
-					<div class="flex space-x-2">
-						<button class="text-gray-500 hover:text-orange-500">
-							<i class="fas fa-edit"></i>
-						</button>
-						<button class="text-gray-500 hover:text-red-500">
-							<i class="fas fa-trash"></i>
-						</button>
-					</div>
-				</div>
-				<div class="grid grid-cols-3 gap-4 mb-3">
-					<div>
-						<label class="text-sm text-gray-500">Weight (kg)</label>
-						<input type="number" value="24" class="w-full border border-gray-300 rounded p-2">
-					</div>
-					<div>
-						<label class="text-sm text-gray-500">Sets</label>
-						<input type="number" value="3" class="w-full border border-gray-300 rounded p-2">
-					</div>
-					<div>
-						<label class="text-sm text-gray-500">Reps</label>
-						<input type="number" value="10" class="w-full border border-gray-300 rounded p-2">
-					</div>
-				</div>
-				<div>
-					<label class="text-sm text-gray-500">Notes</label>
-					<textarea class="w-full border border-gray-300 rounded p-2" rows="2">Good form, focus on slow negative</textarea>
+		<!-- Quick Start Programs -->
+		{% if activePrograms|length > 0 %}
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">
+					<i class="fas fa-play-circle text-orange-500 mr-2"></i>
+					Quick Start Workout
+				</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{% for program in activePrograms %}
+						<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+							<div class="flex justify-between items-start mb-3">
+								<h3 class="font-semibold text-gray-900">{{ program.name }}</h3>
+								<span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+									{{ program.trainingExercises|length }}
+									exercises
+								</span>
+							</div>
+							{% if program.description %}
+								<p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ program.description }}</p>
+							{% endif %}
+							<div class="flex justify-between items-center">
+								<span class="text-sm text-gray-500">
+									<i class="fas fa-clock mr-1"></i>
+									~{{ program.estimated_duration ?? '45' }}
+									min
+								</span>
+								<a href="{{ path('app_workout_start', {'programId': program.id}) }}" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+									Start Workout
+								</a>
+							</div>
+						</div>
+					{% endfor %}
 				</div>
 			</div>
-
-			<!-- Add New Exercise -->
-			<div class="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition text-center">
-				<button class="text-orange-500 hover:text-orange-700">
-					<i class="fas fa-plus-circle text-2xl mb-2"></i>
-					<p>Add New Exercise</p>
-				</button>
+		{% else %}
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<div class="text-center py-8">
+					<i class="fas fa-dumbbell text-gray-400 text-4xl mb-4"></i>
+					<h3 class="text-lg font-semibold text-gray-900 mb-2">No Active Programs</h3>
+					<p class="text-gray-600 mb-4">Create your first training program to get started!</p>
+					<a href="{{ path('app_programs_index') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+						<i class="fas fa-plus mr-2"></i>
+						Create Program
+					</a>
+				</div>
 			</div>
-		</div>
+		{% endif %}
 
-		<!-- Save Button -->
-		<div class="mt-6 flex justify-end">
-			<button class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition">
-				<i class="fas fa-save mr-2"></i>
-				Save Workout
-			</button>
+		<!-- Today's Completed Workouts -->
+		{% if todaysWorkouts|length > 0 %}
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">
+					<i class="fas fa-check-double text-green-500 mr-2"></i>
+					Completed Today
+				</h2>
+				<div class="space-y-4">
+					{% for workout in todaysWorkouts %}
+						<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+							<div class="flex flex-col md:flex-row md:justify-between md:items-start mb-3">
+								<div>
+									<h3 class="font-semibold text-gray-900 mb-1">
+										{{ workout.trainingProgram ? workout.trainingProgram.name : 'Custom Workout' }}
+									</h3>
+									<p class="text-sm text-gray-600">
+										<i class="fas fa-clock mr-1"></i>
+										{{ workout.createdAt|date('H:i') }}
+										{% if workout.duration %}
+											•
+											{{ workout.duration }}
+											minutes
+										{% endif %}
+									</p>
+								</div>
+								<div class="flex items-center gap-2 mt-2 md:mt-0">
+									{% if workout.isCompleted %}
+										<span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+											<i class="fas fa-check mr-1"></i>
+											Completed
+										</span>
+									{% else %}
+										<span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+											<i class="fas fa-clock mr-1"></i>
+											In Progress
+										</span>
+									{% endif %}
+									<a href="{{ path('app_workout_details', {'id': workout.id}) }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors duration-200">
+										View Details
+									</a>
+								</div>
+							</div>
+							{% if workout.notes %}
+								<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mt-3">
+									<p class="text-sm text-indigo-800">
+										<i class="fas fa-sticky-note text-indigo-600 mr-2"></i>
+										{{ workout.notes }}
+									</p>
+								</div>
+							{% endif %}
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		{% endif %}
+
+		<!-- Motivational Section -->
+		<div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg shadow-sm p-6 text-white">
+			<div class="text-center">
+				<i class="fas fa-fire text-3xl mb-3"></i>
+				<h3 class="text-xl font-bold mb-2">
+					{% if todaysWorkouts|length > 0 %}
+						Great job today! 🎉
+					{% else %}
+						Ready to crush today's workout? 💪
+					{% endif %}
+				</h3>
+				<p class="text-orange-100">
+					{% if todaysWorkouts|length > 0 %}
+						You've completed
+						{{ todaysWorkouts|length }}
+						workout{{ todaysWorkouts|length > 1 ? 's' : '' }}
+						today. Keep up the momentum!
+					{% else %}
+						Every workout counts. Start with just one exercise if you need to!
+					{% endif %}
+				</p>
+			</div>
 		</div>
 	</div>
-
 {% endblock %}

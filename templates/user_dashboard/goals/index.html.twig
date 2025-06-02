@@ -1,0 +1,431 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block title %}Fitness Goals - FitTrack
+{% endblock %}
+
+{% block dashboard_content %}
+	<div
+		class="space-y-6">
+		<!-- Header with Stats -->
+		<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+			<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
+				<div>
+					<h1 class="text-2xl font-bold text-gray-900 mb-2">Fitness Goals</h1>
+					<p class="text-gray-600">Set and track your fitness objectives</p>
+				</div>
+				<button id="createGoalBtn" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 mt-4 lg:mt-0">
+					<i class="fas fa-plus mr-2"></i>New Goal
+				</button>
+			</div>
+
+			<!-- Stats Grid -->
+			<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+				{% set stats_config = [
+					{color: 'indigo', label: 'Total Goals', value: stats.totalGoals, icon: 'fa-target'},
+					{color: 'green', label: 'Active Goals', value: stats.activeGoals, icon: 'fa-play-circle'},
+					{color: 'blue', label: 'Completed', value: stats.completedGoals, icon: 'fa-check-circle'},
+					{color: 'orange', label: 'Success Rate', value: stats.completionRate ~ '%', icon: 'fa-chart-line'}
+				] %}
+				{% for stat in stats_config %}
+					<div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
+						<div class="flex justify-between items-center">
+							<div>
+								<p class="text-sm text-gray-500">{{ stat.label }}</p>
+								<p class="text-2xl md:text-3xl font-bold text-gray-900">{{ stat.value }}</p>
+							</div>
+							<div class="p-3 bg-{{ stat.color }}-100 rounded-full">
+								<i class="fas {{ stat.icon }} text-xl text-{{ stat.color }}-600"></i>
+							</div>
+						</div>
+						<div class="mt-4">
+							<p class="text-xs text-gray-500">Goals tracking metric</p>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+
+		<!-- Quick Goal Creation -->
+		<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+			<h2 class="text-xl font-semibold text-gray-900 mb-4">
+				<i class="fas fa-rocket text-orange-500 mr-2"></i>Quick Start Goals
+			</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{% for type, data in goalTypes %}
+					<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer quick-goal-card" data-type="{{ type }}" data-name="{{ data.name }}" data-unit="{{ data.unit }}">
+						<div class="flex items-center space-x-3 mb-3">
+							<div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+								<i class="{{ data.icon }} text-orange-600"></i>
+							</div>
+							<div>
+								<h3 class="font-semibold text-gray-900">{{ data.name }}</h3>
+								<p class="text-sm text-gray-600">Start tracking now</p>
+							</div>
+						</div>
+						<div class="flex justify-end">
+							<span class="text-orange-500 text-sm font-medium">Create →</span>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+
+		<!-- Active Goals -->
+		{% if activeGoals|length > 0 %}
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">
+					<i class="fas fa-flag text-green-500 mr-2"></i>Active Goals
+				</h2>
+				<div class="space-y-4">
+					{% for goal in activeGoals %}
+						{{ _self.renderGoalCard(goal) }}
+					{% endfor %}
+				</div>
+			</div>
+		{% endif %}
+
+		<!-- Completed Goals -->
+		{% if completedGoals|length > 0 %}
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">
+					<i class="fas fa-trophy text-yellow-500 mr-2"></i>Completed Goals
+				</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{% for goal in completedGoals|slice(0, 6) %}
+						{{ _self.renderCompletedGoal(goal) }}
+					{% endfor %}
+				</div>
+			</div>
+		{% endif %}
+
+		<!-- Empty State -->
+		{% if activeGoals|length == 0 and completedGoals|length == 0 %}
+			{{ _self.renderEmptyState() }}
+		{% endif %}
+	</div>
+
+	<!-- Create Goal Modal -->
+	{{ _self.renderCreateModal(goalTypes) }}
+
+	<script>
+		const GoalsManager = {
+modal: null,
+form: null,
+
+init() {
+this.modal = document.getElementById('createGoalModal');
+this.form = document.getElementById('createGoalForm');
+this.bindEvents();
+},
+
+bindEvents() { // Modal controls
+document.getElementById('createGoalBtn').onclick = () => this.showModal();
+document.getElementById('createFirstGoalBtn') ?. onclick = () => this.showModal();
+document.getElementById('closeModalBtn').onclick = () => this.hideModal();
+document.getElementById('cancelBtn').onclick = () => this.hideModal();
+
+// Quick goal creation
+document.querySelectorAll('.quick-goal-card').forEach(card => {
+card.onclick = () => this.selectQuickGoal(card);
+});
+
+// Form submission
+this.form.onsubmit = (e) => this.submitForm(e);
+
+// Action buttons
+document.querySelectorAll('.update-progress-btn').forEach(btn => {
+btn.onclick = () => this.updateProgress(btn.dataset.goalId);
+});
+document.querySelectorAll('.complete-goal-btn').forEach(btn => {
+btn.onclick = () => this.completeGoal(btn.dataset.goalId);
+});
+document.querySelectorAll('.delete-goal-btn').forEach(btn => {
+btn.onclick = () => this.deleteGoal(btn.dataset.goalId);
+});
+},
+
+showModal() {
+this.modal.classList.remove('hidden');
+this.modal.classList.add('flex');
+},
+
+hideModal() {
+this.modal.classList.add('hidden');
+this.modal.classList.remove('flex');
+},
+
+selectQuickGoal(card) {
+document.getElementById('goalTitle').value = card.dataset.name;
+document.getElementById('goalType').value = card.dataset.type;
+this.showModal();
+},
+
+async submitForm(e) {
+e.preventDefault();
+const data = {
+title: document.getElementById('goalTitle').value,
+goalType: document.getElementById('goalType').value,
+targetValue: document.getElementById('targetValue').value || null,
+targetDate: document.getElementById('targetDate').value || null,
+description: document.getElementById('goalDescription').value || null
+};
+
+try {
+const response = await fetch('{{ path('app_goals_create') }}', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+},
+body: JSON.stringify(data)
+});
+const result = await response.json();
+
+if (result.success) {
+location.reload();
+} else {
+alert(result.message || 'Error creating goal');
+}
+} catch (error) {
+alert('Error creating goal');
+}
+},
+
+async updateProgress(goalId) {
+const newValue = prompt('Enter new progress value:');
+if (newValue === null) 
+return;
+
+
+
+await this.apiCall(`{{ path('app_goals_update_progress', {id: 'GOAL_ID'}) }}`.replace('GOAL_ID', goalId), 'POST', {currentValue: parseFloat(newValue)});
+},
+
+async completeGoal(goalId) {
+await this.apiCall(`{{ path('app_goals_complete', {id: 'GOAL_ID'}) }}`.replace('GOAL_ID', goalId), 'POST');
+},
+
+async deleteGoal(goalId) { // Improved confirmation dialog with custom styling
+const goalElement = document.querySelector (`[data-goal-id="${goalId}"]`).closest('.border');
+const goalTitle = goalElement.querySelector('h3').textContent;
+
+const confirmed = confirm (`"${goalTitle}" hedefini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`);
+if (! confirmed) 
+return;
+
+
+
+// Add loading state
+const deleteBtn = document.querySelector (`[data-goal-id="${goalId}"].delete-goal-btn`);
+const originalHTML = deleteBtn.innerHTML;
+deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+deleteBtn.disabled = true;
+
+try {
+await this.apiCall(`{{ path('app_goals_delete', {id: 'GOAL_ID'}) }}`.replace('GOAL_ID', goalId), 'DELETE');
+} catch (error) { // Restore button state on error
+deleteBtn.innerHTML = originalHTML;
+deleteBtn.disabled = false;
+throw error;
+}
+},
+
+async apiCall(url, method, data = null) {
+try {
+const options = {
+method
+};
+if (data) {
+options.headers = {
+'Content-Type': 'application/json'
+};
+options.body = JSON.stringify(data);
+}
+
+const response = await fetch(url, options);
+const result = await response.json();
+
+if (result.success) { // Show success message before reload
+this.showToast('İşlem başarıyla tamamlandı!', 'success');
+setTimeout(() => location.reload(), 800);
+} else {
+this.showToast(result.message || 'İşlem başarısız oldu', 'error');
+}
+} catch (error) {
+this.showToast('Bağlantı hatası oluştu', 'error');
+}
+},
+
+showToast(message, type = 'info') { // Create toast notification
+const toast = document.createElement('div');
+toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white transition-all duration-300 transform translate-x-full`;
+toast.className += type === 'success' ? ' bg-green-500' : type === 'error' ? ' bg-red-500' : ' bg-blue-500';
+toast.textContent = message;
+
+document.body.appendChild(toast);
+
+// Animate in
+setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+
+// Remove after delay
+setTimeout(() => {
+toast.classList.add('translate-x-full');
+setTimeout(() => document.body.removeChild(toast), 300);
+}, 3000);
+}
+};
+
+document.addEventListener('DOMContentLoaded', () => GoalsManager.init());
+	</script>
+{% endblock %}
+
+{% macro renderGoalCard(goal) %}
+	<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+		<div class="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
+			<div class="flex-1">
+				<h3 class="font-semibold text-gray-800 mb-1">{{ goal.title }}</h3>
+				{% if goal.description %}
+					<p class="text-sm text-gray-600 mb-2">{{ goal.description }}</p>
+				{% endif %}
+				<div class="flex items-center space-x-4 text-sm text-gray-600">
+					<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+						{{ goal.goalType|replace({'_': ' '})|title }}
+					</span>
+					{% if goal.targetDate %}
+						<span>
+							<i class="fas fa-calendar mr-1"></i>Due
+							{{ goal.targetDate|date('M j, Y') }}</span>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- Progress Bar -->
+		<div class="mb-4">
+			<div class="flex justify-between items-center mb-2">
+				<span class="text-sm text-gray-600">Progress</span>
+				<span class="text-sm font-semibold text-gray-800">
+					{{ goal.currentValue ?? 0 }}
+					{% if goal.unit %}
+						{{ goal.unit }}
+					{% endif %}
+					/
+					{{ goal.targetValue ?? 0 }}
+					{% if goal.unit %}
+						{{ goal.unit }}
+					{% endif %}
+				</span>
+			</div>
+			<div class="w-full bg-gray-200 rounded-full h-3">
+				<div class="bg-gradient-to-r from-orange-400 to-orange-500 h-3 rounded-full transition-all duration-300" style="width: {{ goal.progressPercentage }}%"></div>
+			</div>
+			<div class="text-right mt-1">
+				<span class="text-sm font-semibold text-orange-600">{{ goal.progressPercentage|round }}%</span>
+			</div>
+		</div>
+
+		<!-- Actions -->
+		<div class="flex justify-between items-center">
+			<button class="update-progress-btn text-orange-500 hover:text-orange-600 text-sm font-medium" data-goal-id="{{ goal.id }}">
+				<i class="fas fa-plus mr-1"></i>Update Progress
+			</button>
+			<div class="flex space-x-2">
+				{% if goal.progressPercentage >= 100 %}
+					<button class="complete-goal-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm" data-goal-id="{{ goal.id }}">
+						<i class="fas fa-check mr-1"></i>Complete
+					</button>
+				{% endif %}
+				<button class="delete-goal-btn text-red-500 hover:text-red-600 text-sm" data-goal-id="{{ goal.id }}">
+					<i class="fas fa-trash mr-1"></i>Delete
+				</button>
+			</div>
+		</div>
+	</div>
+{% endmacro %}
+
+{% macro renderCompletedGoal(goal) %}
+	<div class="border border-gray-200 rounded-lg p-4 bg-green-50">
+		<div class="flex justify-between items-start mb-2">
+			<div class="flex-1">
+				<h3 class="font-semibold text-gray-800">{{ goal.title }}</h3>
+				{% if goal.completedAt %}
+					<p class="text-sm text-gray-600">
+						<i class="fas fa-calendar-check mr-1"></i>Completed on
+						{{ goal.completedAt|date('M j, Y') }}
+					</p>
+				{% endif %}
+			</div>
+			<div class="flex items-center space-x-2">
+				<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+					<i class="fas fa-check mr-1"></i>Completed
+				</span>
+				<button class="delete-goal-btn text-red-400 hover:text-red-600 text-sm p-1 rounded hover:bg-red-50 transition-colors duration-200" data-goal-id="{{ goal.id }}" title="Delete Goal">
+					<i class="fas fa-trash"></i>
+				</button>
+			</div>
+		</div>
+	</div>
+{% endmacro %}
+
+{% macro renderEmptyState() %}
+	<div class="bg-white rounded-xl shadow-md p-6">
+		<div class="text-center py-12">
+			<div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+				<i class="fas fa-target text-3xl text-gray-400"></i>
+			</div>
+			<h3 class="text-xl font-semibold text-gray-700 mb-2">No goals yet</h3>
+			<p class="text-gray-600 mb-6">Set your first fitness goal and start your journey!</p>
+			<button id="createFirstGoalBtn" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+				<i class="fas fa-plus mr-2"></i>Create Your First Goal
+			</button>
+		</div>
+	</div>
+{% endmacro %}
+
+{% macro renderCreateModal(goalTypes) %}
+	<div id="createGoalModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+		<div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+			<div class="flex justify-between items-center mb-4">
+				<h3 class="text-lg font-semibold text-gray-800">Create New Goal</h3>
+				<button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+					<i class="fas fa-times"></i>
+				</button>
+			</div>
+			<form id="createGoalForm" class="space-y-4">
+				{% set form_fields = [
+					{type: 'text', id: 'goalTitle', label: 'Goal Title', required: true},
+					{type: 'select', id: 'goalType', label: 'Goal Type', required: true, options: goalTypes},
+					{type: 'number', id: 'targetValue', label: 'Target Value', step: '0.1'},
+					{type: 'date', id: 'targetDate', label: 'Target Date (Optional)'},
+					{type: 'textarea', id: 'goalDescription', label: 'Description (Optional)', rows: 3}
+				] %}
+
+				{% for field in form_fields %}
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+						{% if field.type == 'select' %}
+							<select id="{{ field.id }}" {{ field.required|default(false) ? 'required' : '' }} class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+								<option value="">Select type...</option>
+								{% for type, data in field.options %}
+									<option value="{{ type }}">{{ data.name }}</option>
+								{% endfor %}
+							</select>
+						{% elseif field.type == 'textarea' %}
+							<textarea id="{{ field.id }}" rows="{{ field.rows|default(3) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"></textarea>
+						{% else %}
+							<input type="{{ field.type }}" id="{{ field.id }}" {{ field.required|default(false) ? 'required' : '' }} {% if field.step|default(false) %} step="{{ field.step }}" {% endif %} class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+						{% endif %}
+					</div>
+				{% endfor %}
+
+				<div class="flex space-x-3 pt-4">
+					<button type="button" id="cancelBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors duration-200">
+						Cancel
+					</button>
+					<button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition-colors duration-200">
+						Create Goal
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endmacro %}

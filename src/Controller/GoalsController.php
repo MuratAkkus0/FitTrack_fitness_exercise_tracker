@@ -24,9 +24,44 @@ class GoalsController extends AbstractController
         $activeGoals = $goalRepository->findActiveGoalsByUser($user);
         $completedGoals = $goalRepository->findCompletedGoalsByUser($user);
 
+        // Calculate statistics
+        $totalGoals = count($activeGoals) + count($completedGoals);
+        $completionRate = $totalGoals > 0 ? round((count($completedGoals) / $totalGoals) * 100) : 0;
+
+        // Upcoming goals (ending within 7 days)
+        $upcomingGoals = array_filter($activeGoals, function ($goal) {
+            $remainingDays = $goal->getRemainingDays();
+            return $remainingDays !== null && $remainingDays <= 7 && $remainingDays >= 0;
+        });
+
+        // Nearly completed goals (80%+ progress)
+        $nearlyCompleted = array_filter($activeGoals, function ($goal) {
+            return $goal->getProgressPercentage() >= 80;
+        });
+
+        // Goal types for quick creation
+        $goalTypes = [
+            'weight_loss' => ['name' => 'Weight Loss', 'icon' => 'fas fa-weight', 'unit' => 'kg'],
+            'muscle_gain' => ['name' => 'Muscle Gain', 'icon' => 'fas fa-dumbbell', 'unit' => 'kg'],
+            'strength' => ['name' => 'Strength', 'icon' => 'fas fa-fist-raised', 'unit' => 'kg'],
+            'endurance' => ['name' => 'Endurance', 'icon' => 'fas fa-running', 'unit' => 'min'],
+            'workout_frequency' => ['name' => 'Workout Frequency', 'icon' => 'fas fa-calendar-check', 'unit' => 'times/week']
+        ];
+
         return $this->render('user_dashboard/goals/index.html.twig', [
             'activeGoals' => $activeGoals,
-            'completedGoals' => $completedGoals
+            'completedGoals' => $completedGoals,
+            'stats' => [
+                'totalGoals' => $totalGoals,
+                'activeGoals' => count($activeGoals),
+                'completedGoals' => count($completedGoals),
+                'completionRate' => $completionRate,
+                'upcomingGoals' => count($upcomingGoals),
+                'nearlyCompleted' => count($nearlyCompleted)
+            ],
+            'goalTypes' => $goalTypes,
+            'upcomingGoalsList' => $upcomingGoals,
+            'nearlyCompletedList' => $nearlyCompleted
         ]);
     }
 

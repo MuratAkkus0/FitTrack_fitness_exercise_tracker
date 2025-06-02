@@ -253,10 +253,11 @@ export default class extends Controller {
   async sendReportToServer(report) {
     try {
       // Only send if there's a performance endpoint
-      const response = await fetch("/api/performance-report", {
+      const response = await fetch("/dashboard/progress/performance-report", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: JSON.stringify(report),
       });

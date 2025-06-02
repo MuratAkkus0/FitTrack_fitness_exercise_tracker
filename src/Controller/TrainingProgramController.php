@@ -4,13 +4,13 @@ namespace App\Controller;
 
 use App\Entity\TrainingProgram;
 use App\Entity\TrainingExercises;
-use App\Form\TrainingProgramFormType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 #[Route('/dashboard/my-programs')]
 #[IsGranted('ROLE_USER')]
@@ -292,6 +292,68 @@ class TrainingProgramController extends AbstractController
                 'sharedPrograms' => [],
                 'error' => 'Error loading shared programs: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    #[Route('/shared/{shareCode}/copy', name: 'app_programs_copy_shared', methods: ['POST'])]
+    public function copySharedProgram(string $shareCode, EntityManagerInterface $entityManager): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+
+            // Find the shared program by share code
+            $originalProgram = $entityManager->getRepository(TrainingProgram::class)
+                ->findOneBy(['share_code' => $shareCode, 'is_public' => true, 'is_active' => true]);
+
+            if (!$originalProgram) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Shared program not found or no longer available'
+                ], 404);
+            }
+
+            // Check if user already has this program
+            $existingProgram = $entityManager->getRepository(TrainingProgram::class)
+                ->findOneBy(['users' => $user, 'name' => $originalProgram->getName() . ' (Copy)']);
+
+            if ($existingProgram) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'You already have a copy of this program'
+                ], 409);
+            }
+
+            // Create a copy of the program
+            $copiedProgram = new TrainingProgram();
+            $copiedProgram->setName($originalProgram->getName() . ' (Copy)');
+            $copiedProgram->setDescription($originalProgram->getDescription());
+            $copiedProgram->setWorkoutsPerWeek($originalProgram->getWorkoutsPerWeek());
+            $copiedProgram->setDurationMinutes($originalProgram->getDurationMinutes());
+            $copiedProgram->setDifficultyLevel($originalProgram->getDifficultyLevel());
+            $copiedProgram->setUsers($user);
+            $copiedProgram->setIsActive(true);
+            $copiedProgram->setIsPublic(false); // User's copy is private by default
+            $copiedProgram->setCreatedAt(new \DateTimeImmutable());
+            $copiedProgram->setUpdatedAt(new \DateTimeImmutable());
+
+            // Copy exercises
+            foreach ($originalProgram->getTrainingExercises() as $exercise) {
+                $copiedProgram->addTrainingExercise($exercise);
+            }
+
+            $entityManager->persist($copiedProgram);
+            $entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Program copied successfully to your account',
+                'programId' => $copiedProgram->getId()
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error copying program: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

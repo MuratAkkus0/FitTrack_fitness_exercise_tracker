@@ -223,7 +223,7 @@ export default class extends Controller {
     this.saveButtonTarget.innerHTML =
       '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
 
-    fetch("/workout/save", {
+    fetch("/dashboard/workout/save", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -231,7 +231,12 @@ export default class extends Controller {
       },
       body: JSON.stringify(workoutData),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
           alert("Workout saved successfully!");
@@ -287,7 +292,7 @@ export default class extends Controller {
       if (this.timerInterval) {
         clearInterval(this.timerInterval);
       }
-      window.location.href = "/dashboard/today";
+      window.location.href = "/dashboard/workout/today";
     }
   }
 

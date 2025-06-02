@@ -99,34 +99,81 @@ class WorkoutController extends AbstractController
     }
 
     #[Route('/history', name: 'app_workout_history', methods: ['GET'])]
-    public function workoutHistory(EntityManagerInterface $entityManager): Response
+    public function workoutHistory(EntityManagerInterface $entityManager, Request $request): Response
     {
         $user = $this->getUser();
+        $limit = 20;
+        $offset = (int) $request->query->get('page', 1) - 1;
+        $offset = max(0, $offset) * $limit;
 
-        $workouts = $entityManager->getRepository(WorkoutLogs::class)->findBy(
-            ['user' => $user],
-            ['created_at' => 'DESC'],
-            20 // Last 20 workouts
-        );
+        // Get workouts with pagination
+        $workouts = $entityManager->getRepository(WorkoutLogs::class)
+            ->createQueryBuilder('w')
+            ->where('w.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('w.created_at', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
 
+        // Get total workout count for pagination
+        $totalWorkouts = $entityManager->getRepository(WorkoutLogs::class)->count(['user' => $user]);
+
+        // Get statistics
+        $completedWorkouts = $entityManager->getRepository(WorkoutLogs::class)->count([
+            'user' => $user,
+            'is_completed' => true
+        ]);
+
+        // This month's workouts
+        $monthStart = new \DateTime('first day of this month');
+        $monthEnd = new \DateTime('last day of this month 23:59:59');
+
+        $thisMonthWorkouts = $entityManager->getRepository(WorkoutLogs::class)
+            ->createQueryBuilder('w')
+            ->select('COUNT(w.id)')
+            ->where('w.user = :user')
+            ->andWhere('w.created_at >= :monthStart')
+            ->andWhere('w.created_at <= :monthEnd')
+            ->setParameter('user', $user)
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('monthEnd', $monthEnd)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Format workouts for template
         $formattedWorkouts = [];
         foreach ($workouts as $workout) {
             $formattedWorkouts[] = [
                 'id' => $workout->getId(),
                 'programName' => $workout->getTrainingProgram()?->getName(),
-                'date' => $workout->getCreatedAt()?->format('d.m.Y H:i'),
+                'date' => $workout->getCreatedAt()?->format('M j, Y'),
+                'time' => $workout->getCreatedAt()?->format('H:i'),
                 'duration' => $workout->getDuration(),
                 'isCompleted' => $workout->isCompleted(),
                 'notes' => $workout->getNotes(),
                 'exerciseCount' => count($workout->getWorkoutLogDetails()),
                 'estimatedCalories' => $workout->getEstimatedCalories(),
                 'totalVolume' => $workout->getTotalVolume(),
-                'totalReps' => $workout->getTotalReps()
+                'totalReps' => $workout->getTotalReps(),
+                'createdAt' => $workout->getCreatedAt()
             ];
         }
 
         return $this->render('user_dashboard/workout/history.html.twig', [
-            'workouts' => $formattedWorkouts
+            'workouts' => $formattedWorkouts,
+            'stats' => [
+                'totalWorkouts' => $totalWorkouts,
+                'completedWorkouts' => $completedWorkouts,
+                'thisMonthWorkouts' => $thisMonthWorkouts,
+                'completionRate' => $totalWorkouts > 0 ? round(($completedWorkouts / $totalWorkouts) * 100) : 0
+            ],
+            'pagination' => [
+                'hasMore' => $totalWorkouts > ($offset + $limit),
+                'currentPage' => ($offset / $limit) + 1,
+                'totalPages' => ceil($totalWorkouts / $limit)
+            ]
         ]);
     }
 
@@ -161,11 +208,10 @@ class WorkoutController extends AbstractController
     public function todaysWorkout(EntityManagerInterface $entityManager): Response
     {
         $user = $this->getUser();
-
-        // Get today's workouts
         $today = new \DateTime('today');
         $tomorrow = new \DateTime('tomorrow');
 
+        // Get today's completed workouts
         $todaysWorkouts = $entityManager->getRepository(WorkoutLogs::class)
             ->createQueryBuilder('w')
             ->where('w.user = :user')
@@ -174,17 +220,38 @@ class WorkoutController extends AbstractController
             ->setParameter('user', $user)
             ->setParameter('today', $today)
             ->setParameter('tomorrow', $tomorrow)
+            ->orderBy('w.created_at', 'DESC')
             ->getQuery()
             ->getResult();
 
-        // Get user's active programs
+        // Get user's active programs for quick start
         $activePrograms = $entityManager->getRepository(TrainingProgram::class)->findBy(
-            ['users' => $user, 'is_active' => true]
+            ['users' => $user, 'is_active' => true],
+            ['created_at' => 'DESC']
         );
+
+        // Get this week's workout count
+        $weekStart = new \DateTime('monday this week');
+        $weekEnd = new \DateTime('sunday this week 23:59:59');
+
+        $weeklyWorkoutCount = $entityManager->getRepository(WorkoutLogs::class)
+            ->createQueryBuilder('w')
+            ->select('COUNT(w.id)')
+            ->where('w.user = :user')
+            ->andWhere('w.created_at >= :weekStart')
+            ->andWhere('w.created_at <= :weekEnd')
+            ->setParameter('user', $user)
+            ->setParameter('weekStart', $weekStart)
+            ->setParameter('weekEnd', $weekEnd)
+            ->getQuery()
+            ->getSingleScalarResult();
 
         return $this->render('user_dashboard/todays_workout/index.html.twig', [
             'todaysWorkouts' => $todaysWorkouts,
-            'activePrograms' => $activePrograms
+            'activePrograms' => $activePrograms,
+            'weeklyWorkoutCount' => $weeklyWorkoutCount,
+            'currentDate' => $today->format('F j, Y'),
+            'currentDay' => $today->format('l')
         ]);
     }
 }

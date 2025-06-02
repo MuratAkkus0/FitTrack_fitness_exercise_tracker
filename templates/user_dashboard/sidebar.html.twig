@@ -9,7 +9,7 @@
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Overview</span>
 		</a>
-		<a href="{{path('app_dashboard_today')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') == 'app_dashboard_today' ? 'bg-orange-50':''}}">
+		<a href="{{path('app_dashboard_today')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{(app.request.get('_route') == 'app_dashboard_today' or app.request.get('_route') == 'app_workout_today') ? 'bg-orange-50':''}}">
 			<i class="fas fa-calendar-day text-orange-400"></i>
 			<span>Today's Workout</span>
 		</a>
@@ -17,7 +17,7 @@
 			<i class="fas fa-dumbbell text-orange-400"></i>
 			<span>My Programs</span>
 		</a>
-		<a href="{{path('app_workout_history')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{app.request.get('_route') starts with 'app_workout' ? 'bg-orange-50':''}}">
+		<a href="{{path('app_workout_history')}}" class="w-full flex items-center space-x-3 text-left text-gray-600 hover:text-indigo-900 p-2 md:p-3 rounded-lg hover:bg-gray-50 cursor-pointer {{(app.request.get('_route') starts with 'app_workout' and app.request.get('_route') != 'app_workout_today') ? 'bg-orange-50':''}}">
 			<i class="fas fa-history text-orange-400"></i>
 			<span>Workout History</span>
 		</a>

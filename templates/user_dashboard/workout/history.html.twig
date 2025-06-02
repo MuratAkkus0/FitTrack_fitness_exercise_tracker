@@ -4,144 +4,207 @@
 {% endblock %}
 
 {% block dashboard_content %}
-	<div class="max-w-6xl mx-auto">
-		<!-- Header -->
-		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-			<div>
-				<h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Workout History</h1>
-				<p class="text-gray-600">Track your fitness journey and progress</p>
-			</div>
-			<div class="flex space-x-3 mt-4 sm:mt-0">
-				<a href="{{ path('app_dashboard_today') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition">
-					<i class="fas fa-plus mr-2"></i>New Workout
+	<div
+		class="space-y-6">
+		<!-- Header with Stats -->
+		<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+			<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
+				<div>
+					<h1 class="text-2xl font-bold text-gray-900 mb-2">Workout History</h1>
+					<p class="text-gray-600">Track your fitness journey and progress</p>
+				</div>
+				<a href="{{ path('app_dashboard_today') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 mt-4 lg:mt-0 inline-block text-center">
+					<i class="fas fa-plus mr-2"></i>
+					New Workout
 				</a>
+			</div>
+
+			<!-- Stats Grid -->
+			<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+				<div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
+					<div class="flex justify-between items-center">
+						<div>
+							<p class="text-sm text-gray-500">Total Workouts</p>
+							<p class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats.totalWorkouts }}</p>
+						</div>
+						<div class="p-3 bg-indigo-100 rounded-full">
+							<i class="fas fa-dumbbell text-xl text-indigo-600"></i>
+						</div>
+					</div>
+					<div class="mt-4">
+						<p class="text-xs text-gray-500">All time completed workouts</p>
+					</div>
+				</div>
+				<div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
+					<div class="flex justify-between items-center">
+						<div>
+							<p class="text-sm text-gray-500">Completed</p>
+							<p class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats.completedWorkouts }}</p>
+						</div>
+						<div class="p-3 bg-green-100 rounded-full">
+							<i class="fas fa-check-circle text-xl text-green-600"></i>
+						</div>
+					</div>
+					<div class="mt-4">
+						<p class="text-xs text-gray-500">Successfully finished workouts</p>
+					</div>
+				</div>
+				<div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
+					<div class="flex justify-between items-center">
+						<div>
+							<p class="text-sm text-gray-500">This Month</p>
+							<p class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats.thisMonthWorkouts }}</p>
+						</div>
+						<div class="p-3 bg-blue-100 rounded-full">
+							<i class="fas fa-calendar-month text-xl text-blue-600"></i>
+						</div>
+					</div>
+					<div class="mt-4">
+						<p class="text-xs text-gray-500">Workouts completed this month</p>
+					</div>
+				</div>
+				<div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
+					<div class="flex justify-between items-center">
+						<div>
+							<p class="text-sm text-gray-500">Success Rate</p>
+							<p class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats.completionRate }}%</p>
+						</div>
+						<div class="p-3 bg-orange-100 rounded-full">
+							<i class="fas fa-chart-line text-xl text-orange-600"></i>
+						</div>
+					</div>
+					<div class="mt-4">
+						<p class="text-xs text-gray-500">Workout completion percentage</p>
+					</div>
+				</div>
 			</div>
 		</div>
 
 		<!-- Workout List -->
-		<div class="space-y-4">
-			{% for workout in workouts %}
-				<div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
-					<div class="p-6">
-						<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-							<div class="flex items-center space-x-4">
-								<div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-									<i class="fas fa-dumbbell text-indigo-600 text-xl"></i>
+		{% if workouts|length > 0 %}
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Workouts</h2>
+				<div class="space-y-4">
+					{% for workout in workouts %}
+						<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+							<div
+								class="flex flex-col md:flex-row md:justify-between md:items-start">
+								<!-- Workout Info -->
+								<div class="flex-1">
+									<div class="flex items-start space-x-3 mb-3">
+										<div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+											<i class="fas fa-dumbbell text-orange-600"></i>
+										</div>
+										<div class="flex-1">
+											<h3 class="font-semibold text-gray-900 mb-1">
+												{{ workout.programName ?? 'Custom Workout' }}
+											</h3>
+											<p class="text-sm text-gray-600">
+												<i class="fas fa-calendar mr-1"></i>
+												{{ workout.date }}
+												at
+												{{ workout.time }}
+											</p>
+										</div>
+									</div>
+
+									<!-- Quick Stats -->
+									<div class="grid grid-cols-3 gap-4 mb-3">
+										<div class="text-center bg-gray-50 rounded-lg p-3">
+											<p class="text-xs text-gray-500 mb-1">Duration</p>
+											<p class="text-sm font-semibold text-gray-900">
+												{% if workout.duration %}
+													{{ workout.duration }}min
+												{% else %}
+													-
+												{% endif %}
+											</p>
+										</div>
+										<div class="text-center bg-gray-50 rounded-lg p-3">
+											<p class="text-xs text-gray-500 mb-1">Exercises</p>
+											<p class="text-sm font-semibold text-gray-900">{{ workout.exerciseCount }}</p>
+										</div>
+										<div class="text-center bg-gray-50 rounded-lg p-3">
+											<p class="text-xs text-gray-500 mb-1">Calories</p>
+											<p class="text-sm font-semibold text-gray-900">
+												{% if workout.estimatedCalories %}
+													{{ workout.estimatedCalories }}
+												{% else %}
+													~{{ (workout.duration * 8)|round }}
+												{% endif %}
+											</p>
+										</div>
+									</div>
+
+									<!-- Notes -->
+									{% if workout.notes %}
+										<div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-3">
+											<p class="text-sm text-indigo-800">
+												<i class="fas fa-sticky-note mr-2 text-indigo-600"></i>
+												{{ workout.notes }}
+											</p>
+										</div>
+									{% endif %}
 								</div>
-								<div>
-									<h3 class="text-lg font-semibold text-gray-800">
-										{{ workout.programName ?? 'Custom Workout' }}
-									</h3>
-									<p class="text-sm text-gray-500">{{ workout.date }}</p>
+
+								<!-- Status & Actions -->
+								<div
+									class="flex flex-col items-end space-y-3 mt-4 md:mt-0 md:ml-4">
+									<!-- Status Badge -->
+									<div>
+										{% if workout.isCompleted %}
+											<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+												<i class="fas fa-check mr-1"></i>
+												Completed
+											</span>
+										{% else %}
+											<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+												<i class="fas fa-clock mr-1"></i>
+												In Progress
+											</span>
+										{% endif %}
+									</div>
+
+									<!-- Actions -->
+									<div class="flex space-x-2">
+										<a href="{{ path('app_workout_details', {id: workout.id}) }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors duration-200">
+											<i class="fas fa-eye mr-1"></i>
+											Details
+										</a>
+									</div>
 								</div>
-							</div>
-							<div class="flex items-center space-x-2 mt-3 sm:mt-0">
-								{% if workout.isCompleted %}
-									<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-										<i class="fas fa-check mr-1"></i>Completed
-									</span>
-								{% else %}
-									<span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-										<i class="fas fa-clock mr-1"></i>In Progress
-									</span>
-								{% endif %}
 							</div>
 						</div>
-
-						<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-							<div class="bg-gray-50 rounded-lg p-3">
-								<div class="flex items-center">
-									<i class="fas fa-clock text-blue-600 mr-2"></i>
-									<div>
-										<p class="text-xs text-gray-500">Duration</p>
-										<p class="text-sm font-semibold text-gray-800">{{ workout.duration }}min</p>
-									</div>
-								</div>
-							</div>
-							<div class="bg-gray-50 rounded-lg p-3">
-								<div class="flex items-center">
-									<i class="fas fa-list text-green-600 mr-2"></i>
-									<div>
-										<p class="text-xs text-gray-500">Exercises</p>
-										<p class="text-sm font-semibold text-gray-800">{{ workout.exerciseCount }}</p>
-									</div>
-								</div>
-							</div>
-							<div class="bg-gray-50 rounded-lg p-3">
-								<div class="flex items-center">
-									<i class="fas fa-fire text-orange-600 mr-2"></i>
-									<div>
-										<p class="text-xs text-gray-500">Calories</p>
-										<p class="text-sm font-semibold text-gray-800">
-											{% if workout.estimatedCalories %}
-												{{ workout.estimatedCalories }}kcal
-											{% else %}
-												~{{ (workout.duration * 300)|round }}kcal
-											{% endif %}
-										</p>
-									</div>
-								</div>
-							</div>
-							<div class="bg-gray-50 rounded-lg p-3">
-								<div class="flex items-center">
-									<i class="fas fa-chart-line text-purple-600 mr-2"></i>
-									<div>
-										<p class="text-xs text-gray-500">Intensity</p>
-										<p class="text-sm font-semibold text-gray-800">High</p>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{% if workout.notes %}
-							<div class="bg-blue-50 rounded-lg p-3 mb-4">
-								<p class="text-sm text-blue-800">
-									<i class="fas fa-sticky-note mr-2"></i>
-									{{ workout.notes }}
-								</p>
-							</div>
-						{% endif %}
-
-						<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-							<div class="flex space-x-3">
-								<a href="{{ path('app_workout_details', {id: workout.id}) }}" class="text-indigo-600 hover:text-indigo-800 font-medium">
-									<i class="fas fa-eye mr-1"></i>View Details
-								</a>
-							</div>
-							<div class="flex items-center space-x-2">
-								<button class="text-gray-500 hover:text-blue-500 transition">
-									<i class="fas fa-copy mr-1"></i>Repeat
-								</button>
-								<button class="text-gray-500 hover:text-red-500 transition">
-									<i class="fas fa-trash mr-1"></i>Delete
-								</button>
-							</div>
-						</div>
-					</div>
+					{% endfor %}
 				</div>
-			{% else %}
+
+				<!-- Pagination -->
+				{% if pagination.totalPages > 1 %}
+					<div class="flex justify-center mt-6 space-x-2">
+						{% for page in 1..pagination.totalPages %}
+							<a href="{{ path('app_workout_history', {page: page}) }}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+																																																																															          {{ page == pagination.currentPage ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+								{{ page }}
+							</a>
+						{% endfor %}
+					</div>
+				{% endif %}
+			</div>
+		{% else %}
+			<!-- Empty State -->
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
 				<div class="text-center py-12">
-					<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+					<div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
 						<i class="fas fa-dumbbell text-3xl text-gray-400"></i>
 					</div>
-					<h3 class="text-xl font-semibold text-gray-600 mb-2">No workouts yet</h3>
-					<p class="text-gray-500 mb-6">Start your fitness journey by creating your first workout!</p>
-					<a href="{{ path('app_dashboard_today') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition">
+					<h3 class="text-xl font-semibold text-gray-900 mb-2">No workouts yet</h3>
+					<p class="text-gray-600 mb-6">Start your fitness journey by creating your first workout!</p>
+					<a href="{{ path('app_dashboard_today') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+						<i class="fas fa-plus mr-2"></i>
 						Start Your First Workout
 					</a>
 				</div>
-			{% endfor %}
-		</div>
-
-		<!-- Pagination -->
-		{% if workouts|length >= 20 %}
-			<div class="text-center mt-8">
-				<button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition">
-					Load More Workouts
-				</button>
 			</div>
 		{% endif %}
 	</div>
-
-
 {% endblock %}
