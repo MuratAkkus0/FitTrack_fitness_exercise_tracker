@@ -1,0 +1,7 @@
+/vendor
+/var
+/node_modules
+/.git
+/tests
+/.env*
+.DS_Store 
