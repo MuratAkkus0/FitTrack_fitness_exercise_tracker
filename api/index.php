@@ -2,17 +2,17 @@
 
 // Vercel için çok erken environment setup - Symfony yüklenmeden önce
 putenv('APP_ENV=prod');
-putenv('APP_DEBUG=1');
+putenv('APP_DEBUG=1'); // Debug modunu geçici olarak aç
 putenv('APP_SECRET=vercel-prod-secret-' . hash('sha256', __DIR__ . 'symfony-vercel'));
-putenv('DATABASE_URL=sqlite:///%kernel.project_dir%/var/data.db');
+putenv('DATABASE_URL=sqlite:///tmp/symfony-database.db');
 
 $_ENV['APP_ENV'] = 'prod';
-$_ENV['APP_DEBUG'] = '1';
+$_ENV['APP_DEBUG'] = '1'; // Debug modunu geçici olarak aç
 $_ENV['APP_SECRET'] = 'vercel-prod-secret-' . hash('sha256', __DIR__ . 'symfony-vercel');
 $_ENV['DATABASE_URL'] = 'sqlite:///tmp/symfony-database.db';
 
 $_SERVER['APP_ENV'] = 'prod';
-$_SERVER['APP_DEBUG'] = '1';
+$_SERVER['APP_DEBUG'] = '1'; // Debug modunu geçici olarak aç
 $_SERVER['APP_SECRET'] = $_ENV['APP_SECRET'];
 $_SERVER['DATABASE_URL'] = $_ENV['DATABASE_URL'];
 
@@ -44,6 +44,13 @@ require_once dirname(__DIR__) . '/vendor/autoload.php';
 @mkdir('/tmp/symfony-cache/prod', 0755, true);
 @mkdir('/tmp/symfony-logs', 0755, true);
 
+// SQLite database dosyasını touch ile oluştur
+$dbPath = '/tmp/symfony-database.db';
+if (!file_exists($dbPath)) {
+    touch($dbPath);
+    chmod($dbPath, 0666);
+}
+
 // Custom Kernel class for Vercel
 class VercelKernel extends Kernel
 {
@@ -59,7 +66,7 @@ class VercelKernel extends Kernel
 }
 
 // Kernel'i direkt oluştur ve handle et
-$kernel = new VercelKernel('prod', true);
+$kernel = new VercelKernel('prod', true); // Debug modunu aç
 
 // Vercel'de database'i otomatik kur
 try {
@@ -108,6 +115,7 @@ try {
     }
 } catch (Exception $e) {
     // Migration hatası varsa devam et
+    error_log("Database setup error: " . $e->getMessage());
 }
 
 $request = Request::createFromGlobals();
