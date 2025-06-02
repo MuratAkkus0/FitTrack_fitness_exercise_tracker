@@ -157,6 +157,7 @@ this.modal.classList.remove('flex');
 selectQuickGoal(card) {
 document.getElementById('goalTitle').value = card.dataset.name;
 document.getElementById('goalType').value = card.dataset.type;
+document.getElementById('unit').value = card.dataset.unit || '';
 this.showModal();
 },
 
@@ -166,6 +167,7 @@ const data = {
 title: document.getElementById('goalTitle').value,
 goalType: document.getElementById('goalType').value,
 targetValue: document.getElementById('targetValue').value || null,
+unit: document.getElementById('unit').value || null,
 targetDate: document.getElementById('targetDate').value || null,
 description: document.getElementById('goalDescription').value || null
 };
@@ -395,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => GoalsManager.init());
 					{type: 'text', id: 'goalTitle', label: 'Goal Title', required: true},
 					{type: 'select', id: 'goalType', label: 'Goal Type', required: true, options: goalTypes},
 					{type: 'number', id: 'targetValue', label: 'Target Value', step: '0.1'},
+					{type: 'text', id: 'unit', label: 'Unit (kg, lbs, min, etc.)'},
 					{type: 'date', id: 'targetDate', label: 'Target Date (Optional)'},
 					{type: 'textarea', id: 'goalDescription', label: 'Description (Optional)', rows: 3}
 				] %}
