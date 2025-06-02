@@ -9,36 +9,40 @@ import "./bootstrap.js";
 // any CSS you import will output into a single css file (app.css in this case)
 import "./styles/app.css";
 
-// Ensure all JavaScript functionality is properly initialized
+// Global app state
+let appInitialized = false;
+
+// Initialize app functionality
+function initializeApp() {
+  // Prevent multiple initializations
+  if (appInitialized) {
+    return;
+  }
+
+  console.log("App initialized successfully");
+  appInitialized = true;
+
+  // Add any global app initialization logic here
+  // This will only run once per page load
+}
+
+// Primary initialization on DOM ready
 document.addEventListener("DOMContentLoaded", function () {
   console.log("App.js: DOM Content Loaded");
-
-  // Initialize any global app functionality here
   initializeApp();
 });
 
-// Handle Turbo navigation
+// Handle Turbo navigation - reset state for new pages
 document.addEventListener("turbo:load", function () {
   console.log("App.js: Turbo Load");
 
-  // Re-initialize app functionality on Turbo navigation
+  // Reset initialization state for new page
+  appInitialized = false;
   initializeApp();
 });
 
-// Fallback for regular page loads
-window.addEventListener("load", function () {
-  console.log("App.js: Window Load");
-
-  // Ensure app is initialized even if other events didn't fire
-  if (!window.appInitialized) {
-    initializeApp();
-  }
+// Cleanup on page unload
+document.addEventListener("turbo:before-cache", function () {
+  console.log("App.js: Before Cache - Cleaning up");
+  appInitialized = false;
 });
-
-function initializeApp() {
-  // Mark app as initialized
-  window.appInitialized = true;
-
-  // Add any global app initialization logic here
-  console.log("App initialized successfully");
-}

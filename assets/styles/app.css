@@ -1,7 +1,98 @@
 @import "tailwindcss";
+@import "@fortawesome/fontawesome-free/css/all.css";
 
+/* Essential global styles */
 html,
 body {
   width: 100vw;
   min-height: 100dvh;
+}
+
+/* Custom component styles */
+.muscle-group-btn.active {
+  @apply bg-orange-500 text-white;
+}
+
+.exercise-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Line clamp utility (not available in older Tailwind versions) */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* JavaScript-controlled modal states (required for dynamic behavior) */
+.modal-active {
+  display: block !important;
+}
+
+.modal-active .modal-content {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+}
+
+/* Program management modal styles */
+[data-program-management-target="modal"].active {
+  display: block !important;
+}
+
+[data-program-management-target="modal"].active
+  [data-program-management-target="modalContent"] {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+}
+
+/* Program selection styles */
+.program-item.selected {
+  @apply border-orange-500 bg-orange-50;
+}
+
+.program-item:hover {
+  @apply border-gray-300 bg-gray-50;
+}
+
+.program-item.selected:hover {
+  @apply border-orange-500 bg-orange-50;
+}
+
+/* Exercise item styles */
+.exercise-item {
+  @apply transition-colors duration-200;
+}
+
+.exercise-item:hover {
+  @apply bg-gray-50;
+}
+
+.exercise-item.selected {
+  @apply bg-sky-50 border-sky-500;
+}
+
+/* Mobile menu styles */
+.mobile-menu.active {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.user-dropdown.active {
+  opacity: 1;
+  transform: scale(1);
+  display: block !important;
+}
+
+/* Complex hover interactions that require custom media queries */
+@media (min-width: 768px) {
+  #userMenuContainer:hover .user-dropdown {
+    opacity: 1;
+    transform: scale(1);
+    display: block !important;
+  }
+
+  #userMenuContainer:hover .user-menu-chevron {
+    transform: rotate(180deg);
+  }
 }

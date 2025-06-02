@@ -1,0 +1,69 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block dashboard_content %}
+	<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+		<div class="flex items-center justify-between mb-6">
+			<div class="flex gap-2 items-center">
+				<a href="{{ path('app_exercises_index') }}" class="text-indigo-600 hover:text-indigo-800 mr-4">
+					<i class="fas fa-arrow-left"></i>
+				</a>
+				<h2 class="text-xl font-semibold text-gray-900">Exercise Details</h2>
+			</div>
+			<form method="POST" action="{{ path('app_exercises_delete', {'id': exercise.id}) }}" onsubmit="return confirm('Are you sure you want to delete this exercise?')" class="inline">
+				<button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+					<i class="fas fa-trash mr-2"></i>Delete Exercise
+				</button>
+			</form>
+		</div>
+
+		<div
+			class="space-y-6">
+			<!-- Exercise Name and Muscle Group -->
+			<div>
+				<h1 class="text-2xl font-bold text-gray-900 mb-2">{{ exercise.name }}</h1>
+				<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+					<i class="fas fa-bullseye mr-2"></i>
+					{{ exercise.targetMuscleGroup ? exercise.targetMuscleGroup.getLabel() : 'Unknown' }}
+				</span>
+			</div>
+
+			<!-- Description -->
+			<div>
+				<h3 class="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+				<div class="bg-gray-50 rounded-lg p-4">
+					<p class="text-gray-700 leading-relaxed">{{ exercise.description }}</p>
+				</div>
+			</div>
+
+			<!-- Exercise Image -->
+			{% if exercise.imageUrl %}
+				<div>
+					<h3 class="text-lg font-semibold text-gray-900 mb-3">Exercise Image</h3>
+					<div class="bg-gray-50 rounded-lg p-4">
+						<img src="{{ exercise.imageUrl }}" alt="{{ exercise.name }}" class="max-w-md h-auto rounded-lg shadow-sm" onerror="this.parentElement.innerHTML='<p class=\'text-gray-500 italic\'>Image could not be loaded</p>'">
+					</div>
+				</div>
+			{% endif %}
+
+			<!-- Exercise Video -->
+			{% if exercise.videoUrl %}
+				<div>
+					<h3 class="text-lg font-semibold text-gray-900 mb-3">Exercise Video</h3>
+					<div class="bg-gray-50 rounded-lg p-4">
+						{% if 'youtube.com' in exercise.videoUrl or 'youtu.be' in exercise.videoUrl %}
+							{% set videoId = exercise.videoUrl|replace({'https://www.youtube.com/watch?v=': '', 'https://youtu.be/': '', 'https://youtube.com/watch?v=': ''})|split('&')[0]|split('?')[0] %}
+							<div class="aspect-video">
+								<iframe width="100%" height="315" src="https://www.youtube.com/embed/{{ videoId }}" frameborder="0" allowfullscreen class="rounded-lg"></iframe>
+							</div>
+						{% else %}
+							<a href="{{ exercise.videoUrl }}" target="_blank" class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium">
+								<i class="fas fa-external-link-alt mr-2"></i>
+								Watch Video
+							</a>
+						{% endif %}
+					</div>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}

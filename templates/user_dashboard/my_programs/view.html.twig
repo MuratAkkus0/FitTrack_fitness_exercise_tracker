@@ -1,0 +1,172 @@
+{% extends 'user_dashboard/dashboard_template.html.twig' %}
+
+{% block dashboard_content %}
+	<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+		<div class="flex items-center justify-between mb-6">
+			<div class="flex items-center">
+				<a href="{{ path('app_programs_index') }}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 mr-4 shadow-sm hover:shadow-md">
+					<i class="fas fa-arrow-left mr-2"></i>
+					<span>Back to Programs</span>
+				</a>
+				<h2 class="text-xl font-semibold text-gray-900">Program Details</h2>
+			</div>
+			<div class="flex space-x-3">
+				<a href="{{ path('app_programs_edit', {'id': program.id}) }}" class="inline-flex items-center px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-900 rounded-lg font-medium transition-all duration-200">
+					<i class="fas fa-edit mr-2"></i>
+					Edit Program
+				</a>
+			</div>
+		</div>
+
+		<div
+			class="space-y-6">
+			<!-- Program Header -->
+			<div>
+				<h1 class="text-2xl font-bold text-gray-900 mb-2">{{ program.name }}</h1>
+				{% if program.description %}
+					<p class="text-gray-600 mb-4">{{ program.description }}</p>
+				{% endif %}
+				<div class="flex items-center space-x-4">
+					{% if program.isActive %}
+						<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+							<i class="fas fa-check-circle mr-2"></i>
+							Active
+						</span>
+					{% else %}
+						<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+							<i class="fas fa-pause-circle mr-2"></i>
+							Inactive
+						</span>
+					{% endif %}
+					<span class="text-sm text-gray-500">
+						Created:
+						{{ program.createdAt ? program.createdAt.format('d.m.Y') : 'Unknown' }}
+					</span>
+				</div>
+			</div>
+
+			<!-- Program Stats -->
+			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+				<div class="bg-gray-50 rounded-lg p-4">
+					<div class="flex items-center">
+						<i class="fas fa-dumbbell text-indigo-600 mr-3 text-xl"></i>
+						<div>
+							<p class="text-sm text-gray-500">Exercises</p>
+							<p class="text-lg font-semibold text-gray-800">{{ program.trainingExercises|length }}</p>
+						</div>
+					</div>
+				</div>
+
+				{% if program.workoutsPerWeek %}
+					<div class="bg-gray-50 rounded-lg p-4">
+						<div class="flex items-center">
+							<i class="fas fa-calendar-week text-blue-600 mr-3 text-xl"></i>
+							<div>
+								<p class="text-sm text-gray-500">Weekly Workouts</p>
+								<p class="text-lg font-semibold text-gray-800">{{ program.workoutsPerWeek }}
+									days</p>
+							</div>
+						</div>
+					</div>
+				{% endif %}
+
+				{% if program.durationMinutes %}
+					<div class="bg-gray-50 rounded-lg p-4">
+						<div class="flex items-center">
+							<i class="fas fa-clock text-orange-600 mr-3 text-xl"></i>
+							<div>
+								<p class="text-sm text-gray-500">Duration</p>
+								<p class="text-lg font-semibold text-gray-800">{{ program.durationMinutes }}
+									min</p>
+							</div>
+						</div>
+					</div>
+				{% endif %}
+
+				{% if program.difficultyLevel %}
+					<div class="bg-gray-50 rounded-lg p-4">
+						<div class="flex items-center">
+							<i class="fas fa-signal text-purple-600 mr-3 text-xl"></i>
+							<div>
+								<p class="text-sm text-gray-500">Difficulty</p>
+								<p class="text-lg font-semibold text-gray-800">
+									{% if program.difficultyLevel == 'beginner' %}
+										Beginner
+									{% elseif program.difficultyLevel == 'intermediate' %}
+										Intermediate
+									{% elseif program.difficultyLevel == 'advanced' %}
+										Advanced
+									{% elseif program.difficultyLevel == 'expert' %}
+										Expert
+									{% else %}
+										{{ program.difficultyLevel|title }}
+									{% endif %}
+								</p>
+							</div>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+
+			<!-- Exercises List -->
+			<div>
+				<h3 class="text-lg font-semibold text-gray-900 mb-4">Exercises in this Program</h3>
+				{% if program.trainingExercises|length > 0 %}
+					<div class="grid grid-cols-1 gap-3">
+						{% for exercise in program.trainingExercises %}
+							<div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+								<div class="flex justify-between items-start">
+									<div class="flex-1">
+										<h4 class="text-md font-medium text-gray-900">{{ exercise.name }}</h4>
+										<p class="text-sm text-gray-600 mt-1">{{ exercise.description }}</p>
+									</div>
+									<div class="flex items-center space-x-3">
+										<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+											{{ exercise.targetMuscleGroup ? exercise.targetMuscleGroup.getLabel() : 'Unknown' }}
+										</span>
+										<a href="{{ path('app_exercises_show', {'id': exercise.id}) }}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+											<i class="fas fa-eye"></i>
+											View Details
+										</a>
+									</div>
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="text-center py-8 text-gray-500">
+						<i class="fas fa-dumbbell text-4xl text-gray-300 mb-3"></i>
+						<p class="text-lg font-medium mb-2">No exercises in this program yet</p>
+						<p class="mb-4">Add some exercises to make this program complete.</p>
+						<a href="{{ path('app_programs_edit', {'id': program.id}) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200">
+							<i class="fas fa-edit mr-2"></i>
+							Add Exercises
+						</a>
+					</div>
+				{% endif %}
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="flex justify-between pt-6 border-t border-gray-200">
+				<div class="flex space-x-3">
+					<a href="{{ path('app_programs_edit', {'id': program.id}) }}" class="inline-flex items-center px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 hover:text-blue-900 rounded-lg font-medium transition-all duration-200">
+						<i class="fas fa-edit mr-2"></i>
+						Edit Program
+					</a>
+				</div>
+				<div class="flex space-x-3">
+					<a href="{{ path('app_workout_start', {'programId': program.id}) }}" class="inline-flex items-center px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+						<i class="fas fa-play mr-2"></i>
+						Start Workout
+					</a>
+					<form method="POST" action="{{ path('app_programs_delete', {'id': program.id}) }}" onsubmit="return confirm('Are you sure you want to delete \" {{ program.name }} \"?')" class="inline">
+						<button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-200">
+							<i class="fas fa-trash mr-2"></i>
+							Delete Program
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

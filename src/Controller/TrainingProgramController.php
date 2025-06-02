@@ -7,7 +7,6 @@ use App\Entity\TrainingExercises;
 use App\Form\TrainingProgramFormType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -24,32 +23,30 @@ class TrainingProgramController extends AbstractController
             $user = $this->getUser();
             if (!$user) {
                 return $this->render('user_dashboard/my_programs/index.html.twig', [
-                    'error' => 'User authentication not performed',
+                    'error' => 'User authentication required',
                     'programs' => []
                 ]);
             }
 
-            // Debug: Check user information
-            $userId = $user instanceof \App\Entity\Users ? $user->getId() : 'unknown';
-            $userEmail = $user instanceof \App\Entity\Users ? $user->getEmail() : 'unknown';
-
-            // First get all programs
-            $allPrograms = $entityManager->getRepository(TrainingProgram::class)->findAll();
-
-            // Get all programs belonging to the user (without is_active filter)
-            $userAllPrograms = $entityManager->getRepository(TrainingProgram::class)->findBy(
-                ['users' => $user],
-                ['created_at' => 'DESC']
-            );
-
-            // Then filter active ones belonging to the user
-            $programs = $entityManager->getRepository(TrainingProgram::class)->findBy(
-                ['users' => $user, 'is_active' => true],
-                ['created_at' => 'DESC']
-            );
+            // Get user's active programs with exercise count
+            $qb = $entityManager->createQueryBuilder();
+            $programs = $qb->select('p', 'COUNT(te.id) as exerciseCount')
+                ->from(TrainingProgram::class, 'p')
+                ->leftJoin('p.training_exercises', 'te')
+                ->where('p.users = :user')
+                ->andWhere('p.is_active = :active')
+                ->setParameter('user', $user)
+                ->setParameter('active', true)
+                ->groupBy('p.id')
+                ->orderBy('p.created_at', 'DESC')
+                ->getQuery()
+                ->getResult();
 
             $formattedPrograms = [];
-            foreach ($programs as $program) {
+            foreach ($programs as $result) {
+                $program = $result[0];
+                $exerciseCount = $result['exerciseCount'];
+
                 $formattedPrograms[] = [
                     'id' => $program->getId(),
                     'name' => $program->getName(),
@@ -58,114 +55,94 @@ class TrainingProgramController extends AbstractController
                     'durationMinutes' => $program->getDurationMinutes(),
                     'difficultyLevel' => $program->getDifficultyLevel(),
                     'isActive' => $program->isActive(),
-                    'isPublic' => $program->isPublic(),
-                    'shareCode' => $program->getShareCode(),
-                    'exerciseCount' => count($program->getTrainingExercises()),
+                    'exerciseCount' => (int)$exerciseCount,
                     'createdAt' => $program->getCreatedAt()?->format('d.m.Y'),
                 ];
             }
 
-            $debugMessage = "User ID: $userId, Email: $userEmail, Total programs: " . count($allPrograms) . ", User all programs: " . count($userAllPrograms) . ", User active programs: " . count($programs);
-
             return $this->render('user_dashboard/my_programs/index.html.twig', [
-                'programs' => $formattedPrograms,
-                'debug' => $debugMessage
+                'programs' => $formattedPrograms
             ]);
         } catch (\Exception $e) {
             return $this->render('user_dashboard/my_programs/index.html.twig', [
-                'error' => 'An error occurred while loading programs: ' . $e->getMessage(),
+                'error' => 'Error loading programs: ' . $e->getMessage(),
                 'programs' => []
             ]);
         }
     }
 
-    #[Route('/exercises', name: 'app_programs_exercises_api', methods: ['GET'])]
-    public function getExercises(EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/create', name: 'app_programs_create', methods: ['GET', 'POST'])]
+    public function create(Request $request, EntityManagerInterface $entityManager): Response
     {
-        try {
-            $exercises = $entityManager->getRepository(TrainingExercises::class)->findAll();
+        if ($request->isMethod('POST')) {
+            try {
+                $name = trim($request->request->get('name'));
+                $description = trim($request->request->get('description'));
+                $workoutsPerWeek = $request->request->get('workouts_per_week');
+                $durationMinutes = $request->request->get('duration_minutes');
+                $difficultyLevel = $request->request->get('difficulty_level');
+                $selectedExercises = $request->request->all('selected_exercises') ?? [];
 
-            $exerciseList = array_map(function ($exercise) {
-                return [
-                    'id' => $exercise->getId(),
-                    'name' => $exercise->getName(),
-                    'description' => $exercise->getDescription() ?? 'No description',
-                    'muscleGroup' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->value : 'Unknown'
-                ];
-            }, $exercises);
+                // Validation
+                if (empty($name)) {
+                    $this->addFlash('error', 'Program name is required.');
+                    return $this->redirectToRoute('app_programs_create');
+                }
 
-            return $this->json([
-                'success' => true,
-                'exercises' => $exerciseList,
-                'count' => count($exerciseList),
-                'debug' => 'Exercises loaded successfully'
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while loading exercises: ' . $e->getMessage(),
-                'debug' => $e->getTraceAsString()
-            ], 500);
-        }
-    }
+                if (strlen($name) < 3 || strlen($name) > 45) {
+                    $this->addFlash('error', 'Program name must be between 3-45 characters.');
+                    return $this->redirectToRoute('app_programs_create');
+                }
 
-    #[Route('/create', name: 'app_programs_create', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            $data = json_decode($request->getContent(), true);
+                $program = new TrainingProgram();
+                $program->setName($name);
+                $program->setDescription($description ?: null);
+                $program->setWorkoutsPerWeek($workoutsPerWeek ? (int)$workoutsPerWeek : null);
+                $program->setDurationMinutes($durationMinutes ? (int)$durationMinutes : null);
+                $program->setDifficultyLevel($difficultyLevel ?: null);
+                $program->setUsers($this->getUser());
 
-            // Validation
-            if (empty($data['programName'])) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Program name cannot be empty'
-                ], 400);
-            }
+                // Add selected exercises
+                if (!empty($selectedExercises)) {
+                    $exerciseIds = array_map('intval', $selectedExercises);
+                    $exercises = $entityManager->getRepository(TrainingExercises::class)
+                        ->findBy(['id' => $exerciseIds]);
 
-            if (strlen($data['programName']) < 3 || strlen($data['programName']) > 45) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Program name must be between 3-45 characters'
-                ], 400);
-            }
-
-            $program = new TrainingProgram();
-            $program->setName($data['programName']);
-            $program->setDescription($data['programDescription'] ?? null);
-            $program->setWorkoutsPerWeek($data['workoutsPerWeek'] ?? null);
-            $program->setDurationMinutes($data['workoutDuration'] ?? null);
-            $program->setDifficultyLevel($data['difficultyLevel'] ?? null);
-            $program->setUsers($this->getUser());
-
-            // Add selected exercises
-            if (isset($data['selectedExercises']) && is_array($data['selectedExercises'])) {
-                foreach ($data['selectedExercises'] as $exerciseId) {
-                    $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
-                    if ($exercise) {
+                    foreach ($exercises as $exercise) {
                         $program->addTrainingExercise($exercise);
                     }
                 }
+
+                $entityManager->persist($program);
+                $entityManager->flush();
+
+                $this->addFlash('success', 'Program created successfully!');
+                return $this->redirectToRoute('app_programs_index');
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Error creating program: ' . $e->getMessage());
             }
-
-            $entityManager->persist($program);
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Program created successfully',
-                'program' => [
-                    'id' => $program->getId(),
-                    'name' => $program->getName(),
-                    'description' => $program->getDescription()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while creating the program: ' . $e->getMessage()
-            ], 500);
         }
+
+        // GET request - show create form
+        $exercises = $entityManager->getRepository(TrainingExercises::class)
+            ->findBy([], ['name' => 'ASC']);
+
+        return $this->render('user_dashboard/my_programs/create.html.twig', [
+            'exercises' => $exercises
+        ]);
+    }
+
+    #[Route('/{id}/view', name: 'app_programs_view', methods: ['GET'])]
+    public function view(TrainingProgram $program): Response
+    {
+        // Ensure user can only view their own programs
+        if ($program->getUsers() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Access denied.');
+        }
+
+        return $this->render('user_dashboard/my_programs/view.html.twig', [
+            'program' => $program
+        ]);
     }
 
     #[Route('/{id}/edit', name: 'app_programs_edit', methods: ['GET', 'POST'])]
@@ -173,152 +150,123 @@ class TrainingProgramController extends AbstractController
     {
         // Ensure user can only edit their own programs
         if ($program->getUsers() !== $this->getUser()) {
-            throw $this->createAccessDeniedException('You do not have access to this program.');
+            throw $this->createAccessDeniedException('Access denied.');
         }
 
         if ($request->isMethod('POST')) {
             try {
-                $data = json_decode($request->getContent(), true);
+                $name = trim($request->request->get('name'));
+                $description = trim($request->request->get('description'));
+                $workoutsPerWeek = $request->request->get('workouts_per_week');
+                $durationMinutes = $request->request->get('duration_minutes');
+                $difficultyLevel = $request->request->get('difficulty_level');
+                $selectedExercises = $request->request->all('selected_exercises') ?? [];
 
                 // Validation
-                if (empty($data['programName'])) {
-                    return $this->json([
-                        'success' => false,
-                        'message' => 'Program name cannot be empty'
-                    ], 400);
+                if (empty($name)) {
+                    $this->addFlash('error', 'Program name is required.');
+                    return $this->redirectToRoute('app_programs_edit', ['id' => $program->getId()]);
                 }
 
-                $program->setName($data['programName']);
-                $program->setDescription($data['programDescription'] ?? null);
-                $program->setWorkoutsPerWeek($data['workoutsPerWeek'] ?? null);
-                $program->setDurationMinutes($data['workoutDuration'] ?? null);
-                $program->setDifficultyLevel($data['difficultyLevel'] ?? null);
+                $program->setName($name);
+                $program->setDescription($description ?: null);
+                $program->setWorkoutsPerWeek($workoutsPerWeek ? (int)$workoutsPerWeek : null);
+                $program->setDurationMinutes($durationMinutes ? (int)$durationMinutes : null);
+                $program->setDifficultyLevel($difficultyLevel ?: null);
                 $program->setUpdatedAt(new \DateTimeImmutable());
 
-                // Clear existing exercises
+                // Update exercises
                 $program->getTrainingExercises()->clear();
+                if (!empty($selectedExercises)) {
+                    $exerciseIds = array_map('intval', $selectedExercises);
+                    $exercises = $entityManager->getRepository(TrainingExercises::class)
+                        ->findBy(['id' => $exerciseIds]);
 
-                // Add new exercises
-                if (isset($data['selectedExercises']) && is_array($data['selectedExercises'])) {
-                    foreach ($data['selectedExercises'] as $exerciseId) {
-                        $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
-                        if ($exercise) {
-                            $program->addTrainingExercise($exercise);
-                        }
+                    foreach ($exercises as $exercise) {
+                        $program->addTrainingExercise($exercise);
                     }
                 }
 
                 $entityManager->flush();
 
-                return $this->json([
-                    'success' => true,
-                    'message' => 'Program updated successfully'
-                ]);
+                $this->addFlash('success', 'Program updated successfully!');
+                return $this->redirectToRoute('app_programs_index');
             } catch (\Exception $e) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'An error occurred while updating the program: ' . $e->getMessage()
-                ], 500);
+                $this->addFlash('error', 'Error updating program: ' . $e->getMessage());
             }
         }
 
-        // GET request, return program data
-        $programData = [
-            'id' => $program->getId(),
-            'name' => $program->getName(),
-            'description' => $program->getDescription(),
-            'workoutsPerWeek' => $program->getWorkoutsPerWeek(),
-            'durationMinutes' => $program->getDurationMinutes(),
-            'difficultyLevel' => $program->getDifficultyLevel(),
-            'selectedExercises' => $program->getTrainingExercises()->map(fn($exercise) => $exercise->getId())->toArray()
-        ];
+        // GET request - show edit form
+        $exercises = $entityManager->getRepository(TrainingExercises::class)
+            ->findBy([], ['name' => 'ASC']);
 
-        return $this->json([
-            'success' => true,
-            'program' => $programData
+        $selectedExerciseIds = $program->getTrainingExercises()->map(fn($ex) => $ex->getId())->toArray();
+
+        return $this->render('user_dashboard/my_programs/edit.html.twig', [
+            'program' => $program,
+            'exercises' => $exercises,
+            'selectedExerciseIds' => $selectedExerciseIds
         ]);
     }
 
-    #[Route('/{id}/delete', name: 'app_programs_delete', methods: ['DELETE'])]
-    public function delete(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/{id}/delete', name: 'app_programs_delete', methods: ['POST'])]
+    public function delete(TrainingProgram $program, EntityManagerInterface $entityManager): Response
     {
+        // Ensure user can only delete their own programs
+        if ($program->getUsers() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Access denied.');
+        }
+
         try {
-            // Ensure user can only delete their own programs
-            if ($program->getUsers() !== $this->getUser()) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'You do not have access to delete this program.'
-                ], 403);
+            // Check if program is being used in workout logs
+            $workoutLogCount = $entityManager->createQueryBuilder()
+                ->select('COUNT(wl.id)')
+                ->from('App\Entity\WorkoutLog', 'wl')
+                ->where('wl.training_program = :program')
+                ->setParameter('program', $program)
+                ->getQuery()
+                ->getSingleScalarResult();
+
+            if ($workoutLogCount > 0) {
+                $this->addFlash('error', 'Cannot delete program that has been used in workouts.');
+                return $this->redirectToRoute('app_programs_index');
             }
 
-            // Soft delete - mark program as inactive
-            $program->setIsActive(false);
-            $program->setUpdatedAt(new \DateTimeImmutable());
-
+            $entityManager->remove($program);
             $entityManager->flush();
 
-            return $this->json([
-                'success' => true,
-                'message' => 'Program deleted successfully'
-            ]);
+            $this->addFlash('success', 'Program deleted successfully!');
         } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while deleting the program: ' . $e->getMessage()
-            ], 500);
+            $this->addFlash('error', 'Error deleting program: ' . $e->getMessage());
         }
+
+        return $this->redirectToRoute('app_programs_index');
     }
 
-    #[Route('/{id}/toggle-status', name: 'app_programs_toggle_status', methods: ['PATCH'])]
-    public function toggleStatus(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/browse-shared', name: 'app_programs_browse_shared', methods: ['GET'])]
+    public function browseSharedPrograms(EntityManagerInterface $entityManager): Response
     {
         try {
-            // Ensure user can only toggle their own programs
-            if ($program->getUsers() !== $this->getUser()) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'You do not have access to toggle this program.'
-                ], 403);
-            }
-
-            $program->setIsActive(!$program->isActive());
-            $program->setUpdatedAt(new \DateTimeImmutable());
-
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Program status toggled successfully',
-                'isActive' => $program->isActive()
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while toggling the program status: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[Route('/api/user-programs', name: 'app_programs_api', methods: ['GET'])]
-    public function getUserPrograms(EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            $user = $this->getUser();
-            if (!$user) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'User authentication not performed'
-                ], 401);
-            }
-
-            // Get active programs belonging to the user
-            $programs = $entityManager->getRepository(TrainingProgram::class)->findBy(
-                ['users' => $user, 'is_active' => true],
-                ['created_at' => 'DESC']
-            );
+            $qb = $entityManager->createQueryBuilder();
+            $programs = $qb->select('p', 'u', 'COUNT(te.id) as exerciseCount')
+                ->from(TrainingProgram::class, 'p')
+                ->join('p.users', 'u')
+                ->leftJoin('p.training_exercises', 'te')
+                ->where('p.is_public = :public')
+                ->andWhere('p.is_active = :active')
+                ->setParameter('public', true)
+                ->setParameter('active', true)
+                ->groupBy('p.id', 'u.id')
+                ->orderBy('p.created_at', 'DESC')
+                ->setMaxResults(20)
+                ->getQuery()
+                ->getResult();
 
             $formattedPrograms = [];
-            foreach ($programs as $program) {
+            foreach ($programs as $result) {
+                $program = $result[0];
+                $exerciseCount = $result['exerciseCount'];
+
                 $formattedPrograms[] = [
                     'id' => $program->getId(),
                     'name' => $program->getName(),
@@ -326,263 +274,24 @@ class TrainingProgramController extends AbstractController
                     'workoutsPerWeek' => $program->getWorkoutsPerWeek(),
                     'durationMinutes' => $program->getDurationMinutes(),
                     'difficultyLevel' => $program->getDifficultyLevel(),
-                    'exerciseCount' => count($program->getTrainingExercises()),
+                    'shareCode' => $program->getShareCode(),
+                    'exerciseCount' => (int)$exerciseCount,
                     'createdAt' => $program->getCreatedAt()?->format('d.m.Y'),
+                    'owner' => [
+                        'name' => $program->getUsers()->getName(),
+                        'surname' => $program->getUsers()->getSurname()
+                    ]
                 ];
             }
 
-            return $this->json([
-                'success' => true,
-                'programs' => $formattedPrograms,
-                'count' => count($formattedPrograms)
+            return $this->render('user_dashboard/my_programs/browse_shared.html.twig', [
+                'sharedPrograms' => $formattedPrograms
             ]);
         } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while loading programs: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[Route('/{programId}/add-exercise/{exerciseId}', name: 'app_programs_add_exercise', methods: ['POST'])]
-    public function addExerciseToProgram(int $programId, int $exerciseId, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            $user = $this->getUser();
-
-            // Check program
-            $program = $entityManager->getRepository(TrainingProgram::class)->find($programId);
-            if (!$program) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Program not found'
-                ], 404);
-            }
-
-            // Check user access
-            if ($program->getUsers() !== $user) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'You do not have access to add exercise to this program'
-                ], 403);
-            }
-
-            // Check exercise
-            $exercise = $entityManager->getRepository(TrainingExercises::class)->find($exerciseId);
-            if (!$exercise) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Exercise not found'
-                ], 404);
-            }
-
-            // Check if exercise already exists in program
-            if ($program->getTrainingExercises()->contains($exercise)) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'This exercise already exists in the program'
-                ], 400);
-            }
-
-            // Add exercise to program
-            $program->addTrainingExercise($exercise);
-            $program->setUpdatedAt(new \DateTimeImmutable());
-
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Exercise added to program successfully',
-                'exerciseCount' => count($program->getTrainingExercises())
+            return $this->render('user_dashboard/my_programs/browse_shared.html.twig', [
+                'sharedPrograms' => [],
+                'error' => 'Error loading shared programs: ' . $e->getMessage()
             ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while adding exercise to program: ' . $e->getMessage()
-            ], 500);
         }
-    }
-
-    #[Route('/{id}/share', name: 'app_programs_share', methods: ['POST'])]
-    public function shareProgram(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            // Ensure user can only share their own programs
-            if ($program->getUsers() !== $this->getUser()) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'You do not have access to share this program.'
-                ], 403);
-            }
-
-            // If already has a share code, use it
-            if (!$program->getShareCode()) {
-                // Generate unique share code
-                do {
-                    $shareCode = strtoupper(substr(md5(uniqid()), 0, 8));
-                    $existingProgram = $entityManager->getRepository(TrainingProgram::class)
-                        ->findOneBy(['share_code' => $shareCode]);
-                } while ($existingProgram);
-
-                $program->setShareCode($shareCode);
-            }
-
-            $program->setIsPublic(true);
-            $program->setUpdatedAt(new \DateTimeImmutable());
-
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Program shared successfully',
-                'shareCode' => $program->getShareCode(),
-                'shareUrl' => $this->generateUrl('app_programs_shared', ['shareCode' => $program->getShareCode()], \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL)
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while sharing the program: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[Route('/{id}/unshare', name: 'app_programs_unshare', methods: ['POST'])]
-    public function unshareProgram(TrainingProgram $program, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            // Ensure user can only unshare their own programs
-            if ($program->getUsers() !== $this->getUser()) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'You do not have access to unshare this program.'
-                ], 403);
-            }
-
-            $program->setIsPublic(false);
-            $program->setUpdatedAt(new \DateTimeImmutable());
-
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Program unshared successfully'
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while unsharing the program: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[Route('/shared/{shareCode}', name: 'app_programs_shared', methods: ['GET'])]
-    public function getSharedProgram(string $shareCode, EntityManagerInterface $entityManager): Response
-    {
-        $program = $entityManager->getRepository(TrainingProgram::class)
-            ->findOneBy(['share_code' => $shareCode, 'is_public' => true]);
-
-        if (!$program) {
-            throw $this->createNotFoundException('Shared program not found or no longer shared.');
-        }
-
-        return $this->render('user_dashboard/my_programs/shared.html.twig', [
-            'program' => $program,
-            'exercises' => $program->getTrainingExercises(),
-            'owner' => $program->getUsers()
-        ]);
-    }
-
-    #[Route('/shared/{shareCode}/copy', name: 'app_programs_copy_shared', methods: ['POST'])]
-    public function copySharedProgram(string $shareCode, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            $user = $this->getUser();
-            $originalProgram = $entityManager->getRepository(TrainingProgram::class)
-                ->findOneBy(['share_code' => $shareCode, 'is_public' => true]);
-
-            if (!$originalProgram) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Shared program not found'
-                ], 404);
-            }
-
-            // Check if user already has a copy of this program
-            $existingCopy = $entityManager->getRepository(TrainingProgram::class)
-                ->findOneBy([
-                    'users' => $user,
-                    'name' => $originalProgram->getName() . ' (Copy)',
-                    'is_active' => true
-                ]);
-
-            if ($existingCopy) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'This program is already copied'
-                ], 400);
-            }
-
-            // Create new program
-            $newProgram = new TrainingProgram();
-            $newProgram->setName($originalProgram->getName() . ' (Copy)');
-            $newProgram->setDescription($originalProgram->getDescription() . ' - ' . $originalProgram->getUsers()->getName() . ' ' . $originalProgram->getUsers()->getSurname() . ' shared');
-            $newProgram->setWorkoutsPerWeek($originalProgram->getWorkoutsPerWeek());
-            $newProgram->setDurationMinutes($originalProgram->getDurationMinutes());
-            $newProgram->setDifficultyLevel($originalProgram->getDifficultyLevel());
-            $newProgram->setUsers($user);
-            $newProgram->setIsPublic(false); // Copy defaults to private
-
-            // Copy exercises
-            foreach ($originalProgram->getTrainingExercises() as $exercise) {
-                $newProgram->addTrainingExercise($exercise);
-            }
-
-            $entityManager->persist($newProgram);
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Program copied successfully',
-                'program' => [
-                    'id' => $newProgram->getId(),
-                    'name' => $newProgram->getName()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while copying the program: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    #[Route('/browse-shared', name: 'app_programs_browse_shared', methods: ['GET'])]
-    public function browseSharedPrograms(EntityManagerInterface $entityManager): Response
-    {
-        $sharedPrograms = $entityManager->getRepository(TrainingProgram::class)
-            ->findBy(['is_public' => true, 'is_active' => true], ['created_at' => 'DESC']);
-
-        $formattedPrograms = [];
-        foreach ($sharedPrograms as $program) {
-            $formattedPrograms[] = [
-                'id' => $program->getId(),
-                'name' => $program->getName(),
-                'description' => $program->getDescription(),
-                'workoutsPerWeek' => $program->getWorkoutsPerWeek(),
-                'durationMinutes' => $program->getDurationMinutes(),
-                'difficultyLevel' => $program->getDifficultyLevel(),
-                'exerciseCount' => count($program->getTrainingExercises()),
-                'createdAt' => $program->getCreatedAt()?->format('d.m.Y'),
-                'shareCode' => $program->getShareCode(),
-                'owner' => [
-                    'name' => $program->getUsers()->getName(),
-                    'surname' => $program->getUsers()->getSurname()
-                ]
-            ];
-        }
-
-        return $this->render('user_dashboard/my_programs/browse_shared.html.twig', [
-            'sharedPrograms' => $formattedPrograms
-        ]);
     }
 }

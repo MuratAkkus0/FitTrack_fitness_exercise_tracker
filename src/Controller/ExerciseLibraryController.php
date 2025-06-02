@@ -6,7 +6,6 @@ use App\Entity\TrainingExercises;
 use App\Enum\MuscleGroup;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -48,70 +47,73 @@ class ExerciseLibraryController extends AbstractController
         ]);
     }
 
-    #[Route('/api/exercises', name: 'app_exercises_api', methods: ['GET'])]
-    public function getExercisesApi(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/create', name: 'app_exercises_create', methods: ['GET', 'POST'])]
+    public function create(Request $request, EntityManagerInterface $entityManager): Response
     {
-        try {
-            $page = max(1, (int) $request->query->get('page', 1));
-            $limit = min(50, max(1, (int) $request->query->get('limit', 12)));
-            $muscleGroup = $request->query->get('muscle_group');
-            $search = $request->query->get('search');
+        if ($request->isMethod('POST')) {
+            $name = trim($request->request->get('name'));
+            $description = trim($request->request->get('description'));
+            $muscleGroupValue = $request->request->get('muscle_group');
+            $imageUrl = trim($request->request->get('image_url'));
+            $videoUrl = trim($request->request->get('video_url'));
 
-            $queryBuilder = $entityManager->getRepository(TrainingExercises::class)
-                ->createQueryBuilder('e');
-
-            if ($muscleGroup && $muscleGroup !== 'all') {
-                $queryBuilder->andWhere('e.target_muscle_group = :muscleGroup')
-                    ->setParameter('muscleGroup', $muscleGroup);
+            // Validation
+            if (empty($name) || empty($description) || empty($muscleGroupValue)) {
+                $this->addFlash('error', 'Name, description and muscle group are required.');
+                return $this->redirectToRoute('app_exercises_create');
             }
 
-            if ($search) {
-                $queryBuilder->andWhere('e.name LIKE :search OR e.description LIKE :search')
-                    ->setParameter('search', '%' . $search . '%');
+            // Check if exercise with same name already exists
+            $existingExercise = $entityManager->getRepository(TrainingExercises::class)
+                ->findOneBy(['name' => $name]);
+
+            if ($existingExercise) {
+                $this->addFlash('error', 'An exercise with this name already exists.');
+                return $this->redirectToRoute('app_exercises_create');
             }
 
-            $totalQuery = clone $queryBuilder;
-            $total = $totalQuery->select('COUNT(e.id)')->getQuery()->getSingleScalarResult();
+            // Find muscle group enum
+            $muscleGroup = null;
+            foreach (MuscleGroup::cases() as $mg) {
+                if ($mg->value === $muscleGroupValue) {
+                    $muscleGroup = $mg;
+                    break;
+                }
+            }
 
-            $exercises = $queryBuilder
-                ->orderBy('e.name', 'ASC')
-                ->setFirstResult(($page - 1) * $limit)
-                ->setMaxResults($limit)
-                ->getQuery()
-                ->getResult();
+            if (!$muscleGroup) {
+                $this->addFlash('error', 'Invalid muscle group selected.');
+                return $this->redirectToRoute('app_exercises_create');
+            }
 
-            $exerciseData = array_map(function ($exercise) {
-                return [
-                    'id' => $exercise->getId(),
-                    'name' => $exercise->getName(),
-                    'description' => $exercise->getDescription(),
-                    'muscleGroup' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->value : null,
-                    'muscleGroupLabel' => $exercise->getTargetMuscleGroup() ? $exercise->getTargetMuscleGroup()->getLabel() : 'Unknown',
-                    'imageUrl' => $exercise->getImageUrl(),
-                    'videoUrl' => $exercise->getVideoUrl()
-                ];
-            }, $exercises);
+            // Create new exercise
+            $exercise = new TrainingExercises();
+            $exercise->setName($name);
+            $exercise->setDescription($description);
+            $exercise->setTargetMuscleGroup($muscleGroup);
 
-            return $this->json([
-                'success' => true,
-                'exercises' => $exerciseData,
-                'pagination' => [
-                    'page' => $page,
-                    'limit' => $limit,
-                    'total' => $total,
-                    'pages' => ceil($total / $limit)
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Error loading exercises: ' . $e->getMessage()
-            ], 500);
+            // Add optional image and video URLs
+            if (!empty($imageUrl)) {
+                $exercise->setImageUrl($imageUrl);
+            }
+            if (!empty($videoUrl)) {
+                $exercise->setVideoUrl($videoUrl);
+            }
+
+            $entityManager->persist($exercise);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Exercise created successfully!');
+            return $this->redirectToRoute('app_exercises_index');
         }
+
+        return $this->render('user_dashboard/exercise_library/create.html.twig', [
+            'muscleGroups' => MuscleGroup::cases()
+        ]);
     }
 
-    #[Route('/exercise/{id}', name: 'app_exercises_show', methods: ['GET'])]
-    public function exerciseDetail(int $id, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}', name: 'app_exercises_show', methods: ['GET'])]
+    public function show(int $id, EntityManagerInterface $entityManager): Response
     {
         $exercise = $entityManager->getRepository(TrainingExercises::class)->find($id);
 
@@ -119,194 +121,54 @@ class ExerciseLibraryController extends AbstractController
             throw $this->createNotFoundException('Exercise not found.');
         }
 
-        // Get user's recent performance with this exercise
-        $user = $this->getUser();
-        $recentPerformance = $entityManager->createQueryBuilder()
-            ->select('wld.weight, wld.reps, wld.sets, wl.created_at')
-            ->from('App\Entity\WorkoutLogDetails', 'wld')
-            ->join('wld.workoutLog', 'wl')
-            ->where('wl.user = :user')
-            ->andWhere('wld.exercise = :exercise')
-            ->andWhere('wl.is_completed = true')
-            ->setParameter('user', $user)
-            ->setParameter('exercise', $exercise)
-            ->orderBy('wl.created_at', 'DESC')
-            ->setMaxResults(5)
-            ->getQuery()
-            ->getResult();
-
-        // Get similar exercises (same muscle group)
-        $similarExercises = $entityManager->getRepository(TrainingExercises::class)
-            ->createQueryBuilder('e')
-            ->where('e.target_muscle_group = :muscleGroup')
-            ->andWhere('e.id != :currentId')
-            ->setParameter('muscleGroup', $exercise->getTargetMuscleGroup())
-            ->setParameter('currentId', $exercise->getId())
-            ->setMaxResults(4)
-            ->getQuery()
-            ->getResult();
-
-        return $this->render('user_dashboard/exercise_library/detail.html.twig', [
-            'exercise' => $exercise,
-            'recentPerformance' => $recentPerformance,
-            'similarExercises' => $similarExercises
+        return $this->render('user_dashboard/exercise_library/show.html.twig', [
+            'exercise' => $exercise
         ]);
     }
 
-    #[Route('/muscle-groups', name: 'app_exercises_muscle_groups_api', methods: ['GET'])]
-    public function getMuscleGroups(): JsonResponse
+    #[Route('/{id}/delete', name: 'app_exercises_delete', methods: ['POST'])]
+    public function delete(int $id, EntityManagerInterface $entityManager): Response
     {
-        $muscleGroups = array_map(function ($muscleGroup) {
-            return [
-                'value' => $muscleGroup->value,
-                'label' => $muscleGroup->getLabel()
-            ];
-        }, MuscleGroup::cases());
+        $exercise = $entityManager->getRepository(TrainingExercises::class)->find($id);
 
-        return $this->json($muscleGroups);
-    }
-
-    #[Route('/create-custom', name: 'app_exercises_create', methods: ['POST'])]
-    public function createCustomExercise(Request $request, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            $data = json_decode($request->getContent(), true);
-
-            // Debug information
-            error_log('Exercise creation request received: ' . json_encode($data));
-
-            // Validation
-            if (empty($data['name']) || empty($data['description']) || empty($data['muscleGroup'])) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'All fields must be filled'
-                ], 400);
-            }
-
-            // Check if muscle group is valid
-            $muscleGroup = null;
-            foreach (MuscleGroup::cases() as $mg) {
-                if ($mg->value === $data['muscleGroup']) {
-                    $muscleGroup = $mg;
-                    break;
-                }
-            }
-
-            if (!$muscleGroup) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Invalid muscle group'
-                ], 400);
-            }
-
-            // Check if exercise with same name already exists
-            $existingExercise = $entityManager->getRepository(TrainingExercises::class)
-                ->findOneBy(['name' => $data['name']]);
-
-            if ($existingExercise) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'An exercise with this name already exists'
-                ], 400);
-            }
-
-            // Create new exercise
-            $exercise = new TrainingExercises();
-            $exercise->setName($data['name']);
-            $exercise->setDescription($data['description']);
-            $exercise->setTargetMuscleGroup($muscleGroup);
-
-            // Add optional fields
-            if (!empty($data['imageUrl'])) {
-                $exercise->setImageUrl($data['imageUrl']);
-            }
-            if (!empty($data['videoUrl'])) {
-                $exercise->setVideoUrl($data['videoUrl']);
-            }
-            if (!empty($data['instructions'])) {
-                $exercise->setInstructions($data['instructions']);
-            }
-
-            $entityManager->persist($exercise);
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Custom exercise created successfully',
-                'exercise' => [
-                    'id' => $exercise->getId(),
-                    'name' => $exercise->getName(),
-                    'description' => $exercise->getDescription(),
-                    'muscleGroup' => $exercise->getTargetMuscleGroup()->value
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while creating the exercise: ' . $e->getMessage()
-            ], 500);
+        if (!$exercise) {
+            $this->addFlash('error', 'Exercise not found.');
+            return $this->redirectToRoute('app_exercises_index');
         }
-    }
 
-    #[Route('/delete/{id}', name: 'app_exercises_delete', methods: ['DELETE'])]
-    public function deleteExercise(int $id, EntityManagerInterface $entityManager): JsonResponse
-    {
-        try {
-            $exercise = $entityManager->getRepository(TrainingExercises::class)->find($id);
+        // Check if exercise is used in programs
+        $programCount = $entityManager->createQueryBuilder()
+            ->select('COUNT(tp.id)')
+            ->from('App\Entity\TrainingProgram', 'tp')
+            ->join('tp.training_exercises', 'te')
+            ->where('te.id = :exerciseId')
+            ->setParameter('exerciseId', $id)
+            ->getQuery()
+            ->getSingleScalarResult();
 
-            if (!$exercise) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'Exercise not found'
-                ], 404);
-            }
-
-            // Check if exercise is used in programs
-            $programCount = $entityManager->createQueryBuilder()
-                ->select('COUNT(tp.id)')
-                ->from('App\Entity\TrainingProgram', 'tp')
-                ->join('tp.training_exercises', 'te')
-                ->where('te.id = :exerciseId')
-                ->setParameter('exerciseId', $id)
-                ->getQuery()
-                ->getSingleScalarResult();
-
-            if ($programCount > 0) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'This exercise is used in ' . $programCount . ' programs. Please remove it from programs first.'
-                ], 400);
-            }
-
-            // Check if exercise is used in workout logs
-            $workoutLogCount = $entityManager->createQueryBuilder()
-                ->select('COUNT(wld.id)')
-                ->from('App\Entity\WorkoutLogDetails', 'wld')
-                ->where('wld.exercise = :exerciseId')
-                ->setParameter('exerciseId', $id)
-                ->getQuery()
-                ->getSingleScalarResult();
-
-            if ($workoutLogCount > 0) {
-                return $this->json([
-                    'success' => false,
-                    'message' => 'This exercise is used in workout logs. Cannot be deleted.'
-                ], 400);
-            }
-
-            // Delete exercise
-            $entityManager->remove($exercise);
-            $entityManager->flush();
-
-            return $this->json([
-                'success' => true,
-                'message' => 'Exercise deleted successfully'
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'An error occurred while deleting the exercise: ' . $e->getMessage()
-            ], 500);
+        if ($programCount > 0) {
+            $this->addFlash('error', 'This exercise is used in programs and cannot be deleted.');
+            return $this->redirectToRoute('app_exercises_index');
         }
+
+        // Check if exercise is used in workout logs
+        $workoutLogCount = $entityManager->createQueryBuilder()
+            ->select('COUNT(wld.id)')
+            ->from('App\Entity\WorkoutLogDetails', 'wld')
+            ->where('wld.exercise = :exerciseId')
+            ->setParameter('exerciseId', $id)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if ($workoutLogCount > 0) {
+            $this->addFlash('error', 'This exercise is used in workout logs and cannot be deleted.');
+            return $this->redirectToRoute('app_exercises_index');
+        }
+
+        $entityManager->remove($exercise);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Exercise deleted successfully!');
+        return $this->redirectToRoute('app_exercises_index');
     }
 }

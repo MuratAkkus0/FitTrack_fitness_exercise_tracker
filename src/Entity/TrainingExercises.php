@@ -31,9 +31,6 @@ class TrainingExercises
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $video_url = null;
 
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $instructions = null;
-
     /**
      * @var Collection<int, TrainingProgram>
      */
@@ -120,18 +117,6 @@ class TrainingExercises
     public function setVideoUrl(?string $video_url): static
     {
         $this->video_url = $video_url;
-
-        return $this;
-    }
-
-    public function getInstructions(): ?string
-    {
-        return $this->instructions;
-    }
-
-    public function setInstructions(?string $instructions): static
-    {
-        $this->instructions = $instructions;
 
         return $this;
     }

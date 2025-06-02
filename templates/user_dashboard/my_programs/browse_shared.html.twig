@@ -3,7 +3,7 @@
 {% block title %}Shared Programs{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto" data-controller="shared-programs">
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between">
@@ -129,7 +129,7 @@
 </div>
 
 <!-- Copy Success Modal -->
-<div id="copySuccessModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+<div data-shared-programs-target="copySuccessModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div class="text-center">
@@ -137,13 +137,13 @@
                     <i class="fas fa-check text-green-600 text-xl"></i>
                 </div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Program Copied!</h3>
-                <p class="text-sm text-gray-500 mb-4" id="copySuccessMessage">Program successfully copied to your account.</p>
+                <p class="text-sm text-gray-500 mb-4" data-shared-programs-target="copySuccessMessage">Program successfully copied to your account.</p>
                 <div class="flex space-x-3">
-                    <button onclick="document.getElementById('copySuccessModal').classList.add('hidden')" 
+                    <button data-action="click->shared-programs#closeSuccessModal" 
                             class="flex-1 inline-flex justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Continue
                     </button>
-                    <button onclick="window.location.href='{{ path('app_programs_index') }}'" 
+                    <button data-action="click->shared-programs#goToMyPrograms" 
                             class="flex-1 inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Go to My Programs
                     </button>
@@ -153,69 +153,4 @@
     </div>
 </div>
 
-<!-- Stimulus Controller -->
-<div data-controller="shared-programs"></div>
-
-<script>
-// Shared Programs Controller
-class SharedProgramsController {
-    static targets = []
-
-    connect() {
-        console.log('Shared Programs Controller connected');
-    }
-
-    async copyProgram(event) {
-        event.preventDefault();
-        const button = event.currentTarget;
-        const shareCode = button.dataset.shareCode;
-        const programName = button.dataset.programName;
-        
-        // Disable button during request
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Copying...';
-        button.disabled = true;
-        
-        try {
-            const response = await fetch(`/dashboard/my-programs/shared/${shareCode}/copy`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                document.getElementById('copySuccessMessage').textContent = 
-                    `"${programName}" program successfully copied to your account.`;
-                document.getElementById('copySuccessModal').classList.remove('hidden');
-            } else {
-                alert(result.message || 'Error occurred while copying program');
-            }
-        } catch (error) {
-            console.error('Copy error:', error);
-            alert('Error occurred while copying program');
-        } finally {
-            // Re-enable button
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    }
-}
-
-// Register the controller
-if (window.Stimulus) {
-    window.Stimulus.register('shared-programs', SharedProgramsController);
-}
-</script>
-
-<style>
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-</style>
 {% endblock %} 
