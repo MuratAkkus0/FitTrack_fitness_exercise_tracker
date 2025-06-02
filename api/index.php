@@ -31,8 +31,27 @@ use App\Kernel;
 // Vendor autoload'u manuel yükle - runtime değil
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
+// Vercel için gerekli dizinleri oluştur
+@mkdir('/tmp/symfony-cache', 0755, true);
+@mkdir('/tmp/symfony-cache/prod', 0755, true);
+@mkdir('/tmp/symfony-logs', 0755, true);
+
+// Custom Kernel class for Vercel
+class VercelKernel extends Kernel
+{
+    public function getCacheDir(): string
+    {
+        return '/tmp/symfony-cache/' . $this->environment;
+    }
+
+    public function getLogDir(): string
+    {
+        return '/tmp/symfony-logs';
+    }
+}
+
 // Kernel'i direkt oluştur ve handle et
-$kernel = new Kernel('prod', false);
+$kernel = new VercelKernel('prod', false);
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
 $response->send();
