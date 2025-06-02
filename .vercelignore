@@ -4,5 +4,4 @@
 /.git
 /tests
 /.env*
-!env.production
 .DS_Store 
