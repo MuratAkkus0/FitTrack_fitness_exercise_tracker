@@ -5,7 +5,6 @@ services:
     region: oregon
     plan: starter
     buildCommand: echo "Build completed"
-    startCommand: /usr/local/bin/start.sh
     dockerfilePath: ./Dockerfile
     dockerContext: .
     envVars:
