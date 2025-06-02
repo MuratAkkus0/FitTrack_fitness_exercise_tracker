@@ -2,17 +2,17 @@
 
 // Vercel için çok erken environment setup - Symfony yüklenmeden önce
 putenv('APP_ENV=prod');
-putenv('APP_DEBUG=1');
+putenv('APP_DEBUG=0');
 putenv('APP_SECRET=vercel-prod-secret-' . hash('sha256', __DIR__ . 'symfony-vercel'));
 putenv('DATABASE_URL=sqlite:///%kernel.project_dir%/var/data.db');
 
 $_ENV['APP_ENV'] = 'prod';
-$_ENV['APP_DEBUG'] = '1';
+$_ENV['APP_DEBUG'] = '0';
 $_ENV['APP_SECRET'] = 'vercel-prod-secret-' . hash('sha256', __DIR__ . 'symfony-vercel');
 $_ENV['DATABASE_URL'] = 'sqlite:///tmp/symfony-database.db';
 
 $_SERVER['APP_ENV'] = 'prod';
-$_SERVER['APP_DEBUG'] = '1';
+$_SERVER['APP_DEBUG'] = '0';
 $_SERVER['APP_SECRET'] = $_ENV['APP_SECRET'];
 $_SERVER['DATABASE_URL'] = $_ENV['DATABASE_URL'];
 
@@ -54,7 +54,7 @@ class VercelKernel extends Kernel
 }
 
 // Kernel'i direkt oluştur ve handle et
-$kernel = new VercelKernel('prod', true);
+$kernel = new VercelKernel('prod', false);
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
 $response->send();
