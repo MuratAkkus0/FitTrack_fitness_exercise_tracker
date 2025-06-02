@@ -75,14 +75,16 @@ try {
 
         // Her request'te tabloları oluştur (in-memory database)
         $sql = "
-            CREATE TABLE IF NOT EXISTS user (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email VARCHAR(180) NOT NULL UNIQUE,
                 roles TEXT NOT NULL,
                 password VARCHAR(255) NOT NULL,
-                is_verified BOOLEAN NOT NULL DEFAULT 0,
-                name VARCHAR(255) DEFAULT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                name VARCHAR(45) DEFAULT NULL,
+                surname VARCHAR(45) DEFAULT NULL,
+                profile_image VARCHAR(255) DEFAULT NULL,
+                reset_token VARCHAR(255) DEFAULT NULL,
+                reset_token_expires_at DATETIME DEFAULT NULL
             );
             
             CREATE TABLE IF NOT EXISTS messenger_messages (
