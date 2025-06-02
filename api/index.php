@@ -2,17 +2,17 @@
 
 // Vercel için çok erken environment setup - Symfony yüklenmeden önce
 putenv('APP_ENV=prod');
-putenv('APP_DEBUG=0');
+putenv('APP_DEBUG=1');
 putenv('APP_SECRET=vercel-prod-secret-' . hash('sha256', __DIR__ . 'symfony-vercel'));
 putenv('DATABASE_URL=sqlite:///%kernel.project_dir%/var/data.db');
 
 $_ENV['APP_ENV'] = 'prod';
-$_ENV['APP_DEBUG'] = '0';
+$_ENV['APP_DEBUG'] = '1';
 $_ENV['APP_SECRET'] = 'vercel-prod-secret-' . hash('sha256', __DIR__ . 'symfony-vercel');
 $_ENV['DATABASE_URL'] = 'sqlite:///tmp/symfony-database.db';
 
 $_SERVER['APP_ENV'] = 'prod';
-$_SERVER['APP_DEBUG'] = '0';
+$_SERVER['APP_DEBUG'] = '1';
 $_SERVER['APP_SECRET'] = $_ENV['APP_SECRET'];
 $_SERVER['DATABASE_URL'] = $_ENV['DATABASE_URL'];
 
@@ -30,6 +30,11 @@ $_SERVER['SYMFONY_SKIP_DOTENV'] = '1';
 
 use Symfony\Component\HttpFoundation\Request;
 use App\Kernel;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\Migrations\Configuration\EntityManager\ExistingEntityManager;
+use Doctrine\Migrations\Configuration\Migration\PhpFile;
+use Doctrine\Migrations\DependencyFactory;
+use Doctrine\Migrations\Tools\Console\Command\MigrateCommand;
 
 // Vendor autoload'u manuel yükle - runtime değil
 require_once dirname(__DIR__) . '/vendor/autoload.php';
@@ -54,7 +59,57 @@ class VercelKernel extends Kernel
 }
 
 // Kernel'i direkt oluştur ve handle et
-$kernel = new VercelKernel('prod', false);
+$kernel = new VercelKernel('prod', true);
+
+// Vercel'de database'i otomatik kur
+try {
+    $kernel->boot();
+    $container = $kernel->getContainer();
+
+    // Entity Manager'ı al
+    if ($container->has('doctrine.orm.entity_manager')) {
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+
+        // Database schema'yı oluştur
+        $connection = $entityManager->getConnection();
+        $schemaManager = $connection->getSchemaManager();
+
+        // Basit tablo kontrolü - eğer user tablosu yoksa migration'ları çalıştır
+        $tables = $schemaManager->listTableNames();
+        if (!in_array('user', $tables)) {
+            // Migration'ları manuel çalıştır
+            $platform = $connection->getDatabasePlatform();
+
+            // Basit user tablosu oluştur
+            $sql = "
+                CREATE TABLE IF NOT EXISTS user (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email VARCHAR(180) NOT NULL UNIQUE,
+                    roles TEXT NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    is_verified BOOLEAN NOT NULL DEFAULT 0,
+                    name VARCHAR(255) DEFAULT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                
+                CREATE TABLE IF NOT EXISTS messenger_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    body TEXT NOT NULL,
+                    headers TEXT NOT NULL,
+                    queue_name VARCHAR(190) NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    available_at DATETIME NOT NULL,
+                    delivered_at DATETIME DEFAULT NULL
+                );
+            ";
+
+            $connection->executeStatement($sql);
+        }
+    }
+} catch (Exception $e) {
+    // Migration hatası varsa devam et
+}
+
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
 $response->send();
