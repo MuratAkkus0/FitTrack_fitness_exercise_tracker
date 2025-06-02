@@ -16,9 +16,6 @@
       "dest": "/api/index.php"
     }
   ],
-  "outputDirectory": "public",
-  "env": {
-    "APP_ENV": "prod",
-    "APP_DEBUG": "false"
-  }
+  "buildCommand": "echo 'No build needed for PHP'",
+  "installCommand": "echo 'No install needed'"
 }
