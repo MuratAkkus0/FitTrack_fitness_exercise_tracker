@@ -25,12 +25,22 @@ class RegistrationController extends AbstractController
             /** @var string $plainPassword */
             $plainPassword = $form->get('plainPassword')->getData();
 
+            // Debug logs
+            error_log("Registration: Plain password received: " . $plainPassword);
+
             // encode the plain password
-            $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
+            $hashedPassword = $userPasswordHasher->hashPassword($user, $plainPassword);
+            error_log("Registration: Hashed password: " . $hashedPassword);
+
+            $user->setPassword($hashedPassword);
             $user->setRoles([UserRoles::USER->value]);
 
             $entityManager->persist($user);
             $entityManager->flush();
+
+            // Test the password immediately after saving
+            $isValid = $userPasswordHasher->isPasswordValid($user, $plainPassword);
+            error_log("Registration: Password verification after save: " . ($isValid ? 'VALID' : 'INVALID'));
 
             // Redirect to login page after successful registration
             $this->addFlash('success', 'Your account has been successfully created. You can now log in.');

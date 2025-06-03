@@ -28,6 +28,17 @@ if (!file_exists($envPath) && file_exists($prodEnvPath)) {
 $_ENV['SYMFONY_SKIP_DOTENV'] = '1';
 $_SERVER['SYMFONY_SKIP_DOTENV'] = '1';
 
+// Vercel için session ayarları
+ini_set('session.save_path', '/tmp');
+ini_set('session.gc_maxlifetime', 3600);
+session_set_cookie_params([
+    'lifetime' => 3600,
+    'path' => '/',
+    'secure' => true,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
 use Symfony\Component\HttpFoundation\Request;
 use App\Kernel;
 use Doctrine\DBAL\DriverManager;
@@ -43,6 +54,7 @@ require_once dirname(__DIR__) . '/vendor/autoload.php';
 @mkdir('/tmp/symfony-cache', 0755, true);
 @mkdir('/tmp/symfony-cache/prod', 0755, true);
 @mkdir('/tmp/symfony-logs', 0755, true);
+@mkdir('/tmp/sessions', 0755, true);
 
 // Custom Kernel class for Vercel
 class VercelKernel extends Kernel
@@ -75,16 +87,14 @@ try {
 
         // Her request'te tabloları oluştur (in-memory database)
         $sql = "
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS user (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email VARCHAR(180) NOT NULL UNIQUE,
                 roles TEXT NOT NULL,
                 password VARCHAR(255) NOT NULL,
-                name VARCHAR(45) DEFAULT NULL,
-                surname VARCHAR(45) DEFAULT NULL,
-                profile_image VARCHAR(255) DEFAULT NULL,
-                reset_token VARCHAR(255) DEFAULT NULL,
-                reset_token_expires_at DATETIME DEFAULT NULL
+                is_verified BOOLEAN NOT NULL DEFAULT 0,
+                name VARCHAR(255) DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             
             CREATE TABLE IF NOT EXISTS messenger_messages (

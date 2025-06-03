@@ -3,10 +3,21 @@ framework:
   secret: "%env(APP_SECRET)%"
 
   # Note that the session will be started ONLY if you read or write from it.
-  session: true
+  session:
+    save_path: "/tmp/sessions"
+    # Vercel serverless için session ayarları
+    cookie_secure: auto
+    cookie_samesite: lax
 
-  # CSRF protection
-  csrf_protection: true
+  # CSRF protection - Vercel serverless için detaylı konfigürasyon
+  csrf_protection:
+    enabled: true
+
+  # Form configuration
+  form:
+    enabled: true
+    csrf_protection:
+      enabled: true
 
   #esi: true
   #fragments: true
@@ -16,3 +27,18 @@ when@test:
     test: true
     session:
       storage_factory_id: session.storage.factory.mock_file
+
+when@prod:
+  framework:
+    session:
+      save_path: "/tmp/sessions"
+      # Vercel production için session optimizasyonu
+      cookie_secure: true
+      cookie_samesite: strict
+      cookie_httponly: true
+    csrf_protection:
+      enabled: true
+    form:
+      enabled: true
+      csrf_protection:
+        enabled: true

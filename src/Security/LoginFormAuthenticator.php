@@ -26,15 +26,25 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
     public function authenticate(Request $request): Passport
     {
         $email = $request->getPayload()->getString('email');
+        $password = $request->getPayload()->getString('password');
 
         $request->getSession()->set(SecurityRequestAttributes::LAST_USERNAME, $email);
 
+        // Debug log
+        error_log("LoginFormAuthenticator: Attempting login for email: " . $email);
+
+        $badges = [];
+
+        // CSRF token kontrolünü sadece token mevcut ise ekle
+        $csrfToken = $request->getPayload()->getString('_csrf_token');
+        if ($csrfToken) {
+            $badges[] = new CsrfTokenBadge('authenticate', $csrfToken);
+        }
+
         return new Passport(
             new UserBadge($email),
-            new PasswordCredentials($request->getPayload()->getString('password')),
-            [
-                new CsrfTokenBadge('authenticate', $request->getPayload()->getString('_csrf_token')),
-            ]
+            new PasswordCredentials($password),
+            $badges
         );
     }
 
